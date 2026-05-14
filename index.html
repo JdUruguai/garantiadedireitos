@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jardim Uruguai Quer Saúde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde: #1a4f3a;
+    --verde-claro: #2d7a57;
+    --vermelho: #c0392b;
+    --creme: #f5f0e8;
+    --branco: #ffffff;
+    --cinza: #4a4a4a;
+    --cinza-claro: #e8e4da;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--creme);
+    color: var(--cinza);
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--verde);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  nav .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--creme);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav a.btn-nav {
+    background: var(--vermelho);
+    color: #fff;
+    padding: 0.5rem 1.2rem;
+    border-radius: 2px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    transition: background 0.2s;
+  }
+  nav a.btn-nav:hover { background: #a93226; }
+
+  /* HERO */
+  .hero {
+    background: var(--verde);
+    color: var(--creme);
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    padding: 5rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '+';
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 60vw;
+    font-weight: 900;
+    color: rgba(255,255,255,0.03);
+    position: absolute;
+    right: -10vw;
+    top: -10vw;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .hero-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-tag {
+    display: inline-block;
+    background: var(--vermelho);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.8rem;
+    margin-bottom: 1.5rem;
+    border-radius: 2px;
+  }
+  .hero h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    line-height: 0.95;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.5rem;
+    color: #fff;
+  }
+  .hero h1 em {
+    color: #7ecba8;
+    font-style: normal;
+    display: block;
+  }
+  .hero p {
+    font-size: 1.2rem;
+    max-width: 540px;
+    color: rgba(245,240,232,0.85);
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+  }
+  .hero .btn-hero {
+    display: inline-block;
+    background: var(--vermelho);
+    color: #fff;
+    padding: 1rem 2rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .hero .btn-hero:hover { background: #a93226; transform: translateY(-2px); }
+
+  /* DIVIDER */
+  .divider {
+    background: var(--vermelho);
+    color: #fff;
+    text-align: center;
+    padding: 1.2rem 2rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* SECTION */
+  section { padding: 5rem 2rem; }
+  .container { max-width: 900px; margin: 0 auto; }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--verde-claro);
+    margin-bottom: 0.8rem;
+    display: block;
+  }
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 1;
+    color: var(--verde);
+    margin-bottom: 1rem;
+  }
+
+  /* PROBLEMA */
+  .problema { background: var(--branco); }
+  .problema p {
+    font-size: 1.15rem;
+    color: var(--cinza);
+    max-width: 640px;
+    margin-bottom: 3rem;
+    line-height: 1.75;
+  }
+  .lista-dores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--cinza-claro);
+    border: 1px solid var(--cinza-claro);
+  }
+  .dor-item {
+    background: var(--branco);
+    padding: 1.8rem 1.5rem;
+    position: relative;
+  }
+  .dor-item::before {
+    content: '×';
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--vermelho);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .dor-item p {
+    font-size: 1rem;
+    margin: 0;
+    color: var(--cinza);
+    line-height: 1.5;
+  }
+
+  /* NUMEROS */
+  .numeros { background: var(--verde); color: var(--creme); }
+  .numeros .section-label { color: #7ecba8; }
+  .numeros .section-title { color: #fff; margin-bottom: 0.5rem; }
+  .numeros > .container > p {
+    color: rgba(245,240,232,0.8);
+    font-size: 1rem;
+    margin-bottom: 3rem;
+    max-width: 500px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+  .stat-card {
+    background: rgba(0,0,0,0.2);
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+  .stat-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 3.8rem);
+    font-weight: 900;
+    color: #7ecba8;
+    line-height: 1;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .stat-desc {
+    font-size: 0.9rem;
+    color: rgba(245,240,232,0.75);
+    line-height: 1.4;
+  }
+  .stat-fonte {
+    font-size: 0.7rem;
+    color: rgba(245,240,232,0.4);
+    margin-top: 0.4rem;
+    font-style: italic;
+  }
+
+  /* DIREITO */
+  .direito { background: var(--creme); }
+  .direito-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+  @media (max-width: 640px) {
+    .direito-inner { grid-template-columns: 1fr; gap: 2rem; }
+  }
+  .direito p {
+    font-size: 1.1rem;
+    line-height: 1.75;
+    color: var(--cinza);
+    margin-bottom: 1.5rem;
+  }
+  .leis {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .lei {
+    border-left: 3px solid var(--verde-claro);
+    padding: 0.8rem 1rem;
+    background: var(--branco);
+  }
+  .lei strong {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--verde);
+    display: block;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .lei p {
+    font-size: 0.9rem;
+    color: var(--cinza);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* CTA */
+  .cta {
+    background: var(--vermelho);
+    color: #fff;
+    text-align: center;
+    padding: 6rem 2rem;
+  }
+  .cta .section-title {
+    color: #fff;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    margin-bottom: 1rem;
+  }
+  .cta > .container > p {
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.85);
+    max-width: 520px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+  }
+  .cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+  .btn-cta {
+    display: inline-block;
+    padding: 1rem 2rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: transform 0.15s, opacity 0.2s;
+  }
+  .btn-cta:hover { transform: translateY(-2px); opacity: 0.92; }
+  .btn-cta.primario {
+    background: #fff;
+    color: var(--vermelho);
+  }
+  .btn-cta.secundario {
+    background: transparent;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.6);
+  }
+
+  /* FOOTER */
+  footer {
+    background: #111;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    padding: 1.5rem 2rem;
+    font-size: 0.82rem;
+  }
+  footer strong { color: rgba(255,255,255,0.8); }
+
+  /* ANIMAÇÕES */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-inner > * {
+    animation: fadeUp 0.7s ease both;
+  }
+  .hero-tag { animation-delay: 0.05s; }
+  .hero h1 { animation-delay: 0.15s; }
+  .hero p { animation-delay: 0.25s; }
+  .hero .btn-hero { animation-delay: 0.35s; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">Jd. Uruguai Quer Saúde</span>
+  <a class="btn-nav" href="https://www.change.org/lutepelojd_uruguai" target="_blank">Assine a petição</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-tag">Campinas · Distrito Sudoeste</span>
+    <h1>
+      O bairro existe.
+      <em>O posto não.</em>
+    </h1>
+    <p>
+      O Jardim Uruguai está entre as regiões mais vulneráveis de Campinas —
+      mas não tem uma Unidade Básica de Saúde. Isso precisa mudar.
+    </p>
+    <a class="btn-hero" href="https://www.change.org/lutepelojd_uruguai" target="_blank">
+      Quero assinar agora →
+    </a>
+  </div>
+</section>
+
+<div class="divider">
+  Saúde perto de casa é direito — não privilégio
+</div>
+
+<section class="problema">
+  <div class="container">
+    <span class="section-label">O problema</span>
+    <h2 class="section-title">Sem UBS, quem paga o preço<br>é quem já tem menos</h2>
+    <p>
+      Quando não existe uma unidade de saúde no bairro, ir ao médico
+      vira uma luta. Para uma família em situação de pobreza, o ônibus,
+      a fila e a distância fazem muita gente desistir antes mesmo de ser atendida.
+    </p>
+    <div class="lista-dores">
+      <div class="dor-item"><p>Pré-natal sem acompanhamento próximo</p></div>
+      <div class="dor-item"><p>Crianças sem vacinação em dia</p></div>
+      <div class="dor-item"><p>Idosos sem cuidado contínuo</p></div>
+      <div class="dor-item"><p>Doenças crônicas sem controle</p></div>
+      <div class="dor-item"><p>Saúde mental sem atendimento</p></div>
+      <div class="dor-item"><p>Violência sem acolhimento</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="numeros">
+  <div class="container">
+    <span class="section-label">Os números não mentem</span>
+    <h2 class="section-title">Quem mora aqui<br>merece saber</h2>
+    <p>A região Sudoeste — onde fica o Jardim Uruguai — está entre as mais vulneráveis da cidade.</p>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-number">47%</span>
+        <p class="stat-desc">das famílias cadastradas vivem em extrema pobreza</p>
+        <p class="stat-fonte">Renda per capita até R$ 89/mês · CadÚnico</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">21,7%</span>
+        <p class="stat-desc">da população total de Campinas mora nesta região</p>
+        <p class="stat-fonte">2ª região mais populosa do município</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">9.877</span>
+        <p class="stat-desc">famílias recebem Bolsa Família aqui — 23,7% do total da cidade</p>
+        <p class="stat-fonte">Abril de 2021</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">1.951</span>
+        <p class="stat-desc">notificações de violência entre 2018 e 2021</p>
+        <p class="stat-fonte">O maior número entre todas as regiões · SISNOV</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">10.693</span>
+        <p class="stat-desc">bebês nascidos na região entre 2018 e 2020</p>
+        <p class="stat-fonte">2ª região com mais nascimentos</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">944</span>
+        <p class="stat-desc">mortes por Covid-19 no Distrito Sudoeste</p>
+        <p class="stat-fonte">29.178 casos durante a pandemia</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="direito">
+  <div class="container">
+    <div class="direito-inner">
+      <div>
+        <span class="section-label">Por que é um direito</span>
+        <h2 class="section-title">A lei já garante.<br>Falta cumprir.</h2>
+        <p>
+          A Constituição de 1988 diz que saúde é direito de todos e dever do Estado.
+          O SUS foi criado para chegar até onde a população está — e não o contrário.
+        </p>
+        <p>
+          Sem uma UBS no Jardim Uruguai, esse direito existe no papel,
+          mas não existe na prática.
+        </p>
+      </div>
+      <div class="leis">
+        <div class="lei">
+          <strong>Constituição Federal — Art. 196</strong>
+          <p>Saúde é direito de todos, com acesso universal e igualitário.</p>
+        </div>
+        <div class="lei">
+          <strong>Lei 8.080/1990</strong>
+          <p>O SUS deve ser organizado de forma regionalizada, perto de onde as pessoas vivem.</p>
+        </div>
+        <div class="lei">
+          <strong>Portaria 2.436/2017</strong>
+          <p>A Atenção Básica deve ser a porta de entrada do SUS, territorializada e próxima da população.</p>
+        </div>
+        <div class="lei">
+          <strong>Plano Municipal de Saúde</strong>
+          <p>Campinas prevê ampliar a cobertura da Atenção Básica para 74% até 2025 — o Jardim Uruguai precisa estar nesse plano.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container">
+    <h2 class="section-title">Chegou a hora<br>de agir.</h2>
+    <p>
+      Assine a petição. Compartilhe com os vizinhos. 
+      Cada nome faz o bairro ser visto pelo poder público.
+    </p>
+    <div class="cta-buttons">
+      <a class="btn-cta primario" href="https://www.change.org/lutepelojd_uruguai" target="_blank">
+        ✍ Assinar a petição
+      </a>
+   <a class="btn-cta secundario" href="https://wa.me/?text=O%20Jardim%20Uruguai%20não%20tem%20UBS.%20Assine%20a%20petição%20e%20ajude%20a%20mudar%20isso!%20%E2%9C%8D%20https%3A%2F%2Fwww.change.org%2Flutepelojd_uruguai" target="_blank">
+  Compartilhar no WhatsApp
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Iniciativa dos <strong>moradores do Jardim Uruguai</strong> · Campinas, SP · 2026</p>
+  <p style="margin-top: 0.4rem;">Dados: PMS Campinas · CadÚnico · SISNOV · IBGE</p>
+</footer>
+
+</body>
+</html>
