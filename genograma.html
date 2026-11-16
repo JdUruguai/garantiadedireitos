@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genograma · Garantia de Direitos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style id="pgcss"></style>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde: #1a4f3a;
+    --verde-claro: #2d7a57;
+    --vermelho: #c0392b;
+    --creme: #f5f0e8;
+    --branco: #ffffff;
+    --cinza: #4a4a4a;
+    --cinza-claro: #e8e4da;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--creme);
+    color: var(--cinza);
+    line-height: 1.45;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* CABEÇALHO */
+  header {
+    background: var(--verde);
+    color: var(--creme);
+    padding: 0.6rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .marca { display: flex; align-items: baseline; gap: 0.6rem; }
+  .marca .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.35rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .marca .tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #7ecba8;
+  }
+  .acoes { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-height: 38px;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 3px;
+    background: transparent;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .btn:hover { background: rgba(255,255,255,0.12); }
+  .btn.dest { background: var(--vermelho); border-color: var(--vermelho); }
+  .btn.dest:hover { background: #a93226; }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+
+  .menu { position: relative; }
+  .menu summary { list-style: none; }
+  .menu summary::-webkit-details-marker { display: none; }
+  .menu-lista {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 50;
+    min-width: 210px;
+    background: #fff;
+    border: 1px solid var(--cinza-claro);
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    padding: 0.3rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .menu-lista button {
+    text-align: left;
+    background: none;
+    border: 0;
+    padding: 0.6rem 0.7rem;
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--cinza);
+    font-weight: 500;
+  }
+  .menu-lista button:hover { background: var(--creme); }
+
+  /* ÁREA DE TRABALHO */
+  .app {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+  }
+  .palco { position: relative; background: #fff; min-height: 0; min-width: 0; overflow: hidden; }
+  #cv {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+  .barra {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: calc(100% - 20px);
+  }
+  .zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; }
+  .bt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 40px;
+    min-width: 40px;
+    padding: 0.3rem 0.75rem;
+    background: #fff;
+    border: 1px solid #cfc9bb;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--verde);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .bt:hover { background: var(--creme); }
+  .bt:disabled { opacity: 0.4; cursor: default; }
+  .bt svg { display: block; }
+  .bt.cheio { background: var(--verde); border-color: var(--verde); color: #fff; }
+  .bt.cheio:hover { background: var(--verde-claro); }
+  .bt.perigo { color: var(--vermelho); border-color: #e3b7b1; }
+
+  #faixa {
+    position: absolute;
+    left: 50%;
+    top: 62px;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - 20px);
+    background: var(--verde);
+    color: #fff;
+    padding: 0.5rem 0.6rem 0.5rem 0.9rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  }
+  #faixa[hidden] { display: none; }
+  #faixa button {
+    background: rgba(255,255,255,0.18);
+    border: 0;
+    color: #fff;
+    border-radius: 3px;
+    padding: 0.3rem 0.6rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* PAINEL */
+  .painel {
+    background: var(--creme);
+    border-left: 1px solid #d8d2c4;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #alca {
+    display: none;
+    width: 100%;
+    background: #ece6d9;
+    border: 0;
+    border-bottom: 1px solid #d8d2c4;
+    padding: 0.45rem 1rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--verde);
+    cursor: pointer;
+    text-align: left;
+  }
+  #pn { overflow-y: auto; padding: 1rem; flex: 1; min-height: 0; }
+  #pn h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--verde);
+    margin-bottom: 0.6rem;
+    line-height: 1.15;
+  }
+  #pn h3 {
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--verde-claro);
+    margin: 1.1rem 0 0.5rem;
+  }
+  .campo { display: block; margin-bottom: 0.7rem; }
+  .campo > span { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.2rem; }
+  .campo input, .campo select, .campo textarea {
+    width: 100%;
+    min-height: 40px;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #cfc9bb;
+    border-radius: 3px;
+    background: #fff;
+    font-size: 16px;
+  }
+  .campo textarea { min-height: 84px; resize: vertical; }
+  .campo small { display: block; font-size: 0.78rem; opacity: 0.8; margin-top: 0.2rem; }
+  .duas { display: grid; grid-template-columns: 1fr 96px; gap: 0.6rem; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 0.8rem; }
+  .seg button {
+    min-height: 40px;
+    border: 1px solid #cfc9bb;
+    background: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+  }
+  .seg button:first-child { border-radius: 3px 0 0 3px; border-right: 0; }
+  .seg button:last-child { border-radius: 0 3px 3px 0; }
+  .seg button.on { background: var(--verde); border-color: var(--verde); color: #fff; }
+  .marca-op {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 40px;
+    padding: 0.2rem 0.6rem;
+    background: #fff;
+    border: 1px solid var(--cinza-claro);
+    margin-top: -1px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .marca-op input { width: 20px; height: 20px; accent-color: var(--verde); flex: none; }
+  .marca-op svg { flex: none; }
+  .grupo { display: flex; flex-wrap: wrap; gap: 6px; }
+  .grupo .bt { flex: 1 1 auto; }
+  .nota { font-size: 0.8rem; opacity: 0.85; margin-top: 0.9rem; }
+  .passos { padding-left: 1.1rem; font-size: 0.9rem; }
+  .passos li { margin-bottom: 0.35rem; }
+  .leg-box { background: #fff; border: 1px solid var(--cinza-claro); padding: 0.6rem; }
+  .leg-box svg { display: block; width: 100%; height: auto; }
+  .fim { margin-top: 1.2rem; padding-top: 0.9rem; border-top: 1px solid #d8d2c4; }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    background: #111;
+    color: #fff;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    max-width: calc(100vw - 32px);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #toast.on { opacity: 1; }
+
+  #print { display: none; }
+
+  @media (max-width: 760px) {
+    header { padding: 0.5rem 0.75rem; }
+    .marca .tag { display: none; }
+    .btn { padding: 0.3rem 0.6rem; font-size: 0.85rem; gap: 0; }
+    .so-g { display: none; }
+    .acoes { gap: 0.35rem; }
+    .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+    .painel { border-left: 0; border-top: 1px solid #d8d2c4; max-height: 46vh; max-height: 46dvh; }
+    #alca { display: block; }
+    .painel.fechado #pn { display: none; }
+  }
+
+  @media print {
+    html, body {
+      height: auto !important;
+      overflow: visible !important;
+      display: block !important;
+      background: #fff !important;
+    }
+    body > *:not(#print) { display: none !important; }
+    #print { display: block !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">
+    <span class="logo">Genograma</span>
+    <span class="tag">Garantia de Direitos</span>
+  </div>
+  <div class="acoes">
+    <button class="btn" data-act="imprimir">Imprimir</button>
+    <button class="btn dest" data-act="pdf"><span class="so-g">Salvar&nbsp;</span>PDF</button>
+    <button class="btn dest" data-act="docx"><span class="so-g">Salvar&nbsp;</span>.docx</button>
+    <button class="btn" data-act="png">Imagem</button>
+    <details class="menu">
+      <summary class="btn">Arquivo ▾</summary>
+      <div class="menu-lista">
+        <button data-act="novo">Novo genograma (limpar)</button>
+        <button data-act="exemplo">Carregar exemplo</button>
+        <button data-act="salvar">Salvar projeto para editar depois</button>
+        <button data-act="abrir">Abrir projeto salvo…</button>
+      </div>
+    </details>
+  </div>
+</header>
+
+<div class="app">
+  <div class="palco" id="palco">
+    <svg id="cv" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Área de desenho do genograma"></svg>
+    <div class="barra">
+      <button class="bt cheio" data-act="addH" title="Adicionar homem">
+        <svg width="16" height="16" viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        + Homem
+      </button>
+      <button class="bt cheio" data-act="addM" title="Adicionar mulher">
+        <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        + Mulher
+      </button>
+      <button class="bt" id="bUndo" data-act="undo" title="Desfazer" aria-label="Desfazer">↶</button>
+      <button class="bt" id="bRedo" data-act="redo" title="Refazer" aria-label="Refazer">↷</button>
+    </div>
+    <div id="faixa" hidden><span id="faixaTxt"></span><button data-act="cancelar">Cancelar</button></div>
+    <div class="zoom">
+      <button class="bt" data-act="zoomOut" title="Diminuir" aria-label="Diminuir zoom">−</button>
+      <button class="bt" data-act="zoomIn" title="Aumentar" aria-label="Aumentar zoom">+</button>
+      <button class="bt" data-act="fit" title="Ver tudo">Ver tudo</button>
+    </div>
+  </div>
+  <aside class="painel" id="painel">
+    <button id="alca" data-act="alca"></button>
+    <div id="pn"></div>
+  </aside>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="print"></div>
+<input type="file" id="arq" accept=".json,application/json" hidden>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- constantes e utilidades ---------- */
+var R = 28;                       // metade do lado/raio do símbolo
+var INK = '#111';
+var GREY = '#808080';
+var FONT = 'Arial, Helvetica, sans-serif';
+var KEY = 'genograma.v1';
+var TIPOS_REL = {
+  abusiva: 'Relação abusiva',
+  distante: 'Relação distante',
+  hostil: 'Relação hostil, mas próxima',
+  rompimento: 'Rompimento de relação'
+};
+
+var $ = function (s) { return document.querySelector(s); };
+var cv = $('#cv'), pn = $('#pn');
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  });
+}
+function n1(v) { return Math.round(v * 10) / 10; }
+var mctx = document.createElement('canvas').getContext('2d');
+function larg(t, font) { mctx.font = font; return mctx.measureText(t || '').width; }
+
+/* ---------- estado ---------- */
+function vazio() {
+  return { v: 1, titulo: 'Genograma', obs: '', legenda: true, seq: 1,
+           pessoas: [], unioes: [], filhos: [], relacoes: [] };
+}
+function exemplo() {
+  var s = vazio();
+  s.titulo = 'Genograma — Família (exemplo)';
+  s.pessoas = [
+    { id: 'p1', sexo: 'M', nome: 'Avô', idade: '', x: 420, y: 100, morte: true },
+    { id: 'p2', sexo: 'F', nome: 'Avó', idade: '61', x: 560, y: 100 },
+    { id: 'p3', sexo: 'M', nome: 'Pai', idade: '35', x: 250, y: 270, alcool: true, preso: true },
+    { id: 'p4', sexo: 'F', nome: 'Mãe', idade: '32', x: 490, y: 270 },
+    { id: 'p5', sexo: 'M', nome: 'Irmão', idade: '12', x: 290, y: 450 },
+    { id: 'p6', sexo: 'F', nome: 'Criança', idade: '8', x: 450, y: 450, foco: true }
+  ];
+  s.unioes = [
+    { id: 'u7', a: 'p1', b: 'p2', tipo: 'oficial', rompida: false, rotulo: '' },
+    { id: 'u8', a: 'p3', b: 'p4', tipo: 'naooficial', rompida: true, rotulo: '5 anos' }
+  ];
+  s.filhos = [
+    { id: 'f9', de: 'u7', filho: 'p4' },
+    { id: 'f10', de: 'u8', filho: 'p5' },
+    { id: 'f11', de: 'u8', filho: 'p6' }
+  ];
+  s.relacoes = [
+    { id: 'r12', a: 'p3', b: 'p4', tipo: 'abusiva', rotulo: '' },
+    { id: 'r13', a: 'p5', b: 'p6', tipo: 'hostil', rotulo: '' },
+    { id: 'r14', a: 'p3', b: 'p5', tipo: 'distante', rotulo: '' }
+  ];
+  s.seq = 15;
+  return s;
+}
+/* Valida e limpa um projeto vindo de arquivo ou do armazenamento local. */
+function normalizar(o) {
+  if (!o || typeof o !== 'object' || !Array.isArray(o.pessoas)) return null;
+  var s = vazio(), ids = {}, max = 0;
+  function num(id) { var m = /(\d+)$/.exec(String(id)); if (m) max = Math.max(max, +m[1]); }
+  s.titulo = typeof o.titulo === 'string' ? o.titulo : 'Genograma';
+  s.obs = typeof o.obs === 'string' ? o.obs : '';
+  s.legenda = o.legenda !== false;
+  o.pessoas.forEach(function (p) {
+    if (!p || typeof p.id !== 'string' || ids[p.id] || !isFinite(p.x) || !isFinite(p.y)) return;
+    ids[p.id] = 1; num(p.id);
+    s.pessoas.push({ id: p.id, sexo: p.sexo === 'F' ? 'F' : 'M', nome: String(p.nome || ''),
+      idade: String(p.idade || ''), x: +p.x, y: +p.y,
+      foco: !!p.foco, alcool: !!p.alcool, preso: !!p.preso, morte: !!p.morte });
+  });
+  var us = {};
+  (o.unioes || []).forEach(function (u) {
+    if (!u || typeof u.id !== 'string' || !ids[u.a] || !ids[u.b] || u.a === u.b || us[u.id]) return;
+    us[u.id] = 1; num(u.id);
+    s.unioes.push({ id: u.id, a: u.a, b: u.b, tipo: u.tipo === 'naooficial' ? 'naooficial' : 'oficial',
+      rompida: !!u.rompida, rotulo: String(u.rotulo || '') });
+  });
+  var temPai = {};
+  (o.filhos || []).forEach(function (f) {
+    if (!f || typeof f.id !== 'string' || !ids[f.filho] || temPai[f.filho]) return;
+    if (!ids[f.de] && !us[f.de]) return;
+    temPai[f.filho] = 1; num(f.id);
+    s.filhos.push({ id: f.id, de: f.de, filho: f.filho });
+  });
+  (o.relacoes || []).forEach(function (r) {
+    if (!r || typeof r.id !== 'string' || !ids[r.a] || !ids[r.b] || r.a === r.b) return;
+    num(r.id);
+    s.relacoes.push({ id: r.id, a: r.a, b: r.b, tipo: TIPOS_REL[r.tipo] ? r.tipo : 'distante',
+      rotulo: String(r.rotulo || '') });
+  });
+  s.seq = max + 1;
+  return s;
+}
+
+var S, sel = null, pick = null, view = { x: 0, y: 0, k: 1 };
+var hist = [], fut = [], ultimo = '', ultTipoRel = 'abusiva', painelFechado = false;
+
+function P(id) { for (var i = 0; i < S.pessoas.length; i++) if (S.pessoas[i].id === id) return S.pessoas[i]; return null; }
+function U(id) { for (var i = 0; i < S.unioes.length; i++) if (S.unioes[i].id === id) return S.unioes[i]; return null; }
+function Rl(id) { for (var i = 0; i < S.relacoes.length; i++) if (S.relacoes[i].id === id) return S.relacoes[i]; return null; }
+function Fl(id) { for (var i = 0; i < S.filhos.length; i++) if (S.filhos[i].id === id) return S.filhos[i]; return null; }
+function nid(pre) { return pre + (S.seq++); }
+function nomeDe(p) { return p && p.nome ? p.nome : (p && p.sexo === 'F' ? 'mulher sem nome' : 'homem sem nome'); }
+
+function salvarLocal() { try { localStorage.setItem(KEY, ultimo); } catch (e) {} }
+function commit() {
+  var j = JSON.stringify(S);
+  if (j === ultimo) return;
+  hist.push(ultimo);
+  if (hist.length > 80) hist.shift();
+  fut.length = 0;
+  ultimo = j;
+  salvarLocal();
+  botoes();
+}
+function restaurar(j) {
+  ultimo = j; S = JSON.parse(j); sel = null; pick = null;
+  salvarLocal(); tudo();
+}
+function desfazer() { commit(); if (!hist.length) return; fut.push(ultimo); restaurar(hist.pop()); }
+function refazer() { if (!fut.length) return; hist.push(ultimo); restaurar(fut.pop()); }
+function botoes() { $('#bUndo').disabled = !hist.length; $('#bRedo').disabled = !fut.length; }
+
+/* ---------- geometria ---------- */
+function geoU(u) {
+  var a = P(u.a), b = P(u.b);
+  if (!a || !b) return null;
+  return { a: a, b: b, uy: Math.max(a.y, b.y) + R + 38, mx: (a.x + b.x) / 2 };
+}
+/* Ponto de onde descem os filhos: meio da linha do casal ou base de uma pessoa. */
+function origem(de) {
+  var u = U(de);
+  if (u) { var g = geoU(u); return g ? { x: g.mx, y: g.uy } : null; }
+  var p = P(de);
+  return p ? { x: p.x, y: p.y + R } : null;
+}
+/* Ponto na borda do símbolo de p, na direção de (tx, ty). */
+function borda(p, tx, ty) {
+  var dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy) || 1;
+  var ux = dx / d, uy = dy / d;
+  var dist = (p.sexo === 'M' ? R / Math.max(Math.abs(ux), Math.abs(uy)) : R) + 5;
+  return [p.x + ux * dist, p.y + uy * dist];
+}
+
+/* ---------- desenho (SVG com atributos embutidos, usado na tela e na exportação) ---------- */
+function st(dash, w) {
+  return 'stroke="' + INK + '" stroke-width="' + (w || 2) + '" fill="none" stroke-linejoin="round" stroke-linecap="' +
+    (dash ? 'butt' : 'round') + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '');
+}
+function txt(s, x, y, size, o) {
+  o = o || {};
+  return '<text x="' + n1(x) + '" y="' + n1(y) + '" font-family="' + FONT + '" font-size="' + size +
+    '" font-weight="' + (o.w || 400) + '" text-anchor="' + (o.a || 'middle') + '" fill="' + INK + '"' +
+    (o.halo ? ' stroke="#fff" stroke-width="' + o.halo + '" stroke-linejoin="round" paint-order="stroke"' : '') +
+    '>' + esc(s) + '</text>';
+}
+function simbolo(p, x, y, r) {
+  var m = p.sexo === 'M', sw = r >= 20 ? 2 : 1.6, s = '';
+  s += m ? '<rect x="' + (x - r) + '" y="' + (y - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" fill="#fff"/>'
+         : '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#fff"/>';
+  if (p.alcool) {
+    s += m ? '<rect x="' + (x - r) + '" y="' + y + '" width="' + 2 * r + '" height="' + r + '" fill="' + GREY + '"/>'
+           : '<path d="M' + (x - r) + ' ' + y + 'A' + r + ' ' + r + ' 0 0 0 ' + (x + r) + ' ' + y + 'Z" fill="' + GREY + '"/>';
+  }
+  if (p.preso) {
+    var d = '';
+    [-r / 3, r / 3].forEach(function (o) {
+      var h = m ? r : Math.sqrt(r * r - o * o);
+      d += 'M' + n1(x + o) + ' ' + n1(y - h) + 'V' + n1(y + h) + 'M' + n1(x - h) + ' ' + n1(y + o) + 'H' + n1(x + h);
+    });
+    s += '<path d="' + d + '" stroke="' + INK + '" stroke-width="' + n1(sw * 0.75) + '" fill="none"/>';
+  }
+  s += m ? '<rect x="' + (x - r) + '" y="' + (y - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" ' + st(null, sw) + '/>'
+         : '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" ' + st(null, sw) + '/>';
+  if (p.foco) {
+    var i = n1(r * 0.74);
+    s += m ? '<rect x="' + n1(x - i) + '" y="' + n1(y - i) + '" width="' + 2 * i + '" height="' + 2 * i + '" ' + st(null, sw) + '/>'
+           : '<circle cx="' + x + '" cy="' + y + '" r="' + i + '" ' + st(null, sw) + '/>';
+  }
+  if (p.morte) {
+    var e = n1(m ? r * 1.14 : r * 0.92);
+    s += '<path d="M' + (x - e) + ' ' + (y - e) + 'L' + (x + e) + ' ' + (y + e) + 'M' + (x + e) + ' ' + (y - e) +
+         'L' + (x - e) + ' ' + (y + e) + '" ' + st(null, sw) + '/>';
+  }
+  return s;
+}
+/* Linha de relação entre dois pontos, no estilo da legenda. */
+function linhaRel(tipo, x1, y1, x2, y2) {
+  var L = Math.hypot(x2 - x1, y2 - y1);
+  if (L < 1) return '';
+  var ux = (x2 - x1) / L, uy = (y2 - y1) / L, vx = -uy, vy = ux;
+  function pt(a, b) { return n1(x1 + ux * a + vx * b) + ' ' + n1(y1 + uy * a + vy * b); }
+  var reta = 'M' + pt(0, 0) + 'L' + pt(L, 0), d, t, i, n;
+  if (tipo === 'distante') return '<path d="' + reta + '" ' + st('16 7') + '/>';
+  if (tipo === 'naooficial') return '<path d="' + reta + '" ' + st('7 7') + '/>';
+  if (tipo === 'rompimento') {
+    d = reta;
+    [-5, 3].forEach(function (o) { d += 'M' + pt(L / 2 + o - 3, 10) + 'L' + pt(L / 2 + o + 5, -10); });
+    return '<path d="' + d + '" ' + st() + '/>';
+  }
+  if (tipo === 'hostil') {
+    n = Math.max(2, Math.round(L / 11));
+    d = 'M' + pt(0, 6.5) + 'L' + pt(L, 6.5) + 'M' + pt(0, -6.5) + 'L' + pt(L, -6.5) + 'M' + pt(0, 0);
+    var passos = Math.max(8, Math.ceil(L / 2));
+    for (i = 1; i <= passos; i++) {
+      t = i / passos;
+      d += 'L' + pt(L * t, 5 * Math.sin(Math.PI * n * t));
+    }
+    return '<path d="' + d + '" ' + st(null, 1.8) + '/>';
+  }
+  /* abusiva: linha em espiral (laços) */
+  var lead = Math.min(6, L / 4), Li = L - 2 * lead, r = 6;
+  n = Math.max(2, Math.round(Li / 13));
+  var T = 2 * Math.PI * n, c = Li / T, N = n * 28;
+  d = 'M' + pt(0, 0) + 'L' + pt(lead, 0);
+  for (i = 1; i <= N; i++) {
+    t = T * i / N;
+    d += 'L' + pt(lead + c * t + r * (1 - Math.cos(t)), -r * Math.sin(t));
+  }
+  d += 'L' + pt(L, 0);
+  return '<path d="' + d + '" ' + st(null, 1.8) + '/>';
+}
+
+function cena(tela) {
+  var fundo = '', linhas = '', hits = '', gente = '';
+  function eSel(k, id) { return tela && sel && sel.kind === k && sel.id === id; }
+  function halo(d) { return '<path d="' + d + '" stroke="#2d7a57" stroke-opacity="0.3" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'; }
+  function hit(d, k, id) {
+    return '<path d="' + d + '" data-kind="' + k + '" data-id="' + id +
+      '" stroke="#000" stroke-opacity="0" stroke-width="24" fill="none" pointer-events="stroke" style="cursor:pointer"/>';
+  }
+
+  /* filiação */
+  var grupos = {};
+  S.filhos.forEach(function (f) { (grupos[f.de] = grupos[f.de] || []).push(f); });
+  Object.keys(grupos).forEach(function (de) {
+    var o = origem(de);
+    var fs = grupos[de].filter(function (f) { return P(f.filho); });
+    if (!o || !fs.length) return;
+    var ks = fs.map(function (f) { return P(f.filho); });
+    var by = Math.min.apply(null, ks.map(function (k) { return k.y; })) - R - 24;
+    if (by < o.y + 10) by = o.y + 10;
+    var xs = ks.map(function (k) { return k.x; }).concat(o.x);
+    var d = 'M' + o.x + ' ' + o.y + 'V' + by + 'M' + Math.min.apply(null, xs) + ' ' + by + 'H' + Math.max.apply(null, xs);
+    fs.forEach(function (f, i) {
+      var seg = 'M' + ks[i].x + ' ' + by + 'V' + (ks[i].y - R);
+      d += seg;
+      if (eSel('filho', f.id)) fundo += halo(seg);
+      if (tela) hits += hit(seg, 'filho', f.id);
+    });
+    linhas += '<path d="' + d + '" ' + st() + '/>';
+  });
+
+  /* casais */
+  S.unioes.forEach(function (u) {
+    var g = geoU(u);
+    if (!g) return;
+    var a = g.a, b = g.b, uy = g.uy, mx = g.mx;
+    var d = 'M' + a.x + ' ' + (a.y + R) + 'V' + uy + 'H' + b.x + 'V' + (b.y + R);
+    if (eSel('uniao', u.id)) fundo += halo(d);
+    linhas += '<path d="' + d + '" ' + st(u.tipo === 'naooficial' ? '7 7' : null) + '/>';
+    if (u.rompida) {
+      var sx = mx - Math.min(40, Math.abs(b.x - a.x) / 4);
+      linhas += '<path d="M' + (sx - 9) + ' ' + (uy + 10) + 'L' + (sx - 1) + ' ' + (uy - 10) +
+                'M' + (sx - 1) + ' ' + (uy + 10) + 'L' + (sx + 7) + ' ' + (uy - 10) + '" ' + st() + '/>';
+    }
+    if (u.rotulo) {
+      var temFilho = S.filhos.some(function (f) { return f.de === u.id; });
+      linhas += txt(u.rotulo, temFilho ? mx + 8 : mx, uy + 17, 12, { a: temFilho ? 'start' : 'middle', halo: 3 });
+    }
+    if (tela) hits += hit(d, 'uniao', u.id);
+  });
+
+  /* relações */
+  S.relacoes.forEach(function (r) {
+    var a = P(r.a), b = P(r.b);
+    if (!a || !b || Math.hypot(b.x - a.x, b.y - a.y) < 2 * R + 20) return;
+    var p1 = borda(a, b.x, b.y), p2 = borda(b, a.x, a.y);
+    var d = 'M' + n1(p1[0]) + ' ' + n1(p1[1]) + 'L' + n1(p2[0]) + ' ' + n1(p2[1]);
+    if (eSel('relacao', r.id)) fundo += halo(d);
+    linhas += linhaRel(r.tipo, p1[0], p1[1], p2[0], p2[1]);
+    if (r.rotulo) {
+      var L = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      var nx = -(p2[1] - p1[1]) / L, ny = (p2[0] - p1[0]) / L;
+      if (ny > 0) { nx = -nx; ny = -ny; }
+      linhas += txt(r.rotulo, (p1[0] + p2[0]) / 2 + nx * 18, (p1[1] + p2[1]) / 2 + ny * 18 + 4, 12, { halo: 3 });
+    }
+    if (tela) hits += hit(d, 'relacao', r.id);
+  });
+
+  /* pessoas */
+  S.pessoas.forEach(function (p) {
+    var g = simbolo(p, p.x, p.y, R);
+    if (p.idade) g += txt(p.idade, p.x, p.y + 5.5, 16, { w: 700, halo: 3.5 });
+    if (p.nome) g += txt(p.nome, p.x, p.y + R + 18, 13, { w: 700, halo: 4 });
+    if (tela) {
+      var s = eSel('pessoa', p.id) || (pick && (pick.de === p.id || pick.filho === p.id));
+      g = '<g data-kind="pessoa" data-id="' + p.id + '" style="cursor:grab">' +
+          '<rect x="' + (p.x - R - 8) + '" y="' + (p.y - R - 8) + '" width="' + (2 * R + 16) + '" height="' + (2 * R + 16) +
+          '" rx="8" fill="#2d7a57" fill-opacity="' + (s ? 0.12 : 0) + '"' +
+          (s ? ' stroke="#2d7a57" stroke-width="2" stroke-dasharray="5 4"' : '') + '/>' + g + '</g>';
+    }
+    gente += g;
+  });
+  return fundo + linhas + hits + gente;
+}
+
+function legenda(cols) {
+  var itens = [
+    ['s', { sexo: 'M', alcool: 1 }, 'Abuso de Álcool e Droga'],
+    ['s', { sexo: 'F', foco: 1 }, 'Criança em Foco'],
+    ['s', { sexo: 'M', preso: 1 }, 'Preso'],
+    ['l', 'hostil', 'Relação Hostil, mas próxima'],
+    ['s', { sexo: 'M' }, 'Homem'],
+    ['s', { sexo: 'F' }, 'Mulher'],
+    ['l', 'abusiva', 'Relação Abusiva'],
+    ['l', 'distante', 'Relação Distante'],
+    ['l', 'naooficial', 'Relação não oficial'],
+    ['l', 'rompimento', 'Rompimento de relação'],
+    ['x', null, 'Morte']
+  ];
+  var rh = 36, cw = 340, sx = 64, per = cols === 2 ? 6 : itens.length;
+  var s = txt('Legenda:', 0, 20, 20, { w: 700, a: 'start' });
+  itens.forEach(function (it, i) {
+    var x = Math.floor(i / per) * cw, y = 50 + (i % per) * rh;
+    if (it[0] === 's') s += simbolo(it[1], x + sx / 2, y, 13);
+    else if (it[0] === 'l') s += linhaRel(it[1], x + 2, y, x + sx - 2, y);
+    else s += '<path d="M' + (x + sx / 2 - 10) + ' ' + (y - 10) + 'l20 20m0 -20l-20 20" ' + st() + '/>';
+    s += txt(it[2], x + sx + 12, y + 5, 14, { w: 700, a: 'start' });
+  });
+  return { w: cols === 2 ? 600 : 300, h: 50 + per * rh - 8, svg: s };
+}
+
+function limites() {
+  if (!S.pessoas.length) return null;
+  var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  S.pessoas.forEach(function (p) {
+    var hw = Math.max(R + 10, larg(p.nome, '700 13px ' + FONT) / 2 + 6);
+    x0 = Math.min(x0, p.x - hw); x1 = Math.max(x1, p.x + hw);
+    y0 = Math.min(y0, p.y - R - 12); y1 = Math.max(y1, p.y + R + (p.nome ? 28 : 12));
+  });
+  S.unioes.forEach(function (u) {
+    var g = geoU(u);
+    if (!g) return;
+    y1 = Math.max(y1, g.uy + (u.rotulo ? 26 : 14));
+    if (u.rotulo) x1 = Math.max(x1, g.mx + 12 + larg(u.rotulo, '12px ' + FONT));
+  });
+  S.relacoes.forEach(function (r) {
+    var a = P(r.a), b = P(r.b);
+    if (!a || !b || !r.rotulo) return;
+    var hw = larg(r.rotulo, '12px ' + FONT) / 2 + 6, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    x0 = Math.min(x0, mx - hw - 18); x1 = Math.max(x1, mx + hw + 18); y0 = Math.min(y0, my - 36);
+  });
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+/* ---------- tela ---------- */
+function desenhar() {
+  var w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  var vw = w / view.k, vh = h / view.k;
+  cv.setAttribute('viewBox', n1(view.x) + ' ' + n1(view.y) + ' ' + n1(vw) + ' ' + n1(vh));
+  cv.innerHTML =
+    '<defs><pattern id="pontos" width="20" height="20" patternUnits="userSpaceOnUse">' +
+    '<circle cx="1" cy="1" r="1" fill="#ddd8cc"/></pattern></defs>' +
+    '<rect x="' + n1(view.x) + '" y="' + n1(view.y) + '" width="' + n1(vw) + '" height="' + n1(vh) + '" fill="url(#pontos)"/>' +
+    cena(true);
+}
+function ajustar() {
+  var b = limites(), w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  if (!b) { view = { x: -w / 2, y: -h / 2, k: 1 }; return; }
+  var k = Math.min((w - 40) / b.w, (h - Math.min(130, h * 0.4)) / b.h);
+  view.k = Math.max(0.25, Math.min(1.3, k));
+  view.x = b.x + b.w / 2 - w / (2 * view.k);
+  view.y = b.y + b.h / 2 - (h + 6) / (2 * view.k);
+}
+function zoom(f, px, py) {
+  var k = Math.min(3, Math.max(0.25, view.k * f));
+  var wx = view.x + px / view.k, wy = view.y + py / view.k;
+  view.k = k; view.x = wx - px / k; view.y = wy - py / k;
+  desenhar();
+}
+var toastT;
+function toast(m) {
+  var t = $('#toast');
+  t.textContent = m; t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(function () { t.classList.remove('on'); }, 3200);
+}
+function faixa() {
+  var f = $('#faixa');
+  if (!pick) { f.hidden = true; return; }
+  var m = {
+    casal: 'Toque na outra pessoa do casal',
+    rel: 'Toque na outra pessoa da relação',
+    filhoDe: 'Toque na linha do casal (ou em uma pessoa, se for só um responsável)',
+    ligarFilho: 'Toque na pessoa que é filho(a)'
+  };
+  $('#faixaTxt').textContent = m[pick.t];
+  f.hidden = false;
+}
+
+/* ---------- painel ---------- */
+function icone(p) {
+  return '<svg width="26" height="26" viewBox="-17 -17 34 34" aria-hidden="true">' + simbolo(p, 0, 0, 13) + '</svg>';
+}
+function painel() {
+  var h = '', p, u, r, f, a, b, k;
+  if (!sel) {
+    var lg = legenda(1);
+    h = '<h2>Documento</h2>' +
+      '<label class="campo"><span>Título</span><input data-f="titulo" value="' + esc(S.titulo) + '" placeholder="Ex.: Genograma — Família Silva"></label>' +
+      '<label class="campo"><span>Observações</span><textarea data-f="obs" placeholder="Opcional">' + esc(S.obs) + '</textarea>' +
+      '<small>Aparecem abaixo do genograma na impressão e nos arquivos.</small></label>' +
+      '<label class="marca-op"><input type="checkbox" data-f="legenda"' + (S.legenda ? ' checked' : '') + '>Incluir legenda na impressão e nos arquivos</label>' +
+      '<h3>Como usar</h3><ol class="passos">' +
+      '<li>Adicione pessoas com <b>+ Homem</b> e <b>+ Mulher</b> e arraste para posicionar.</li>' +
+      '<li>Toque em uma pessoa para preencher nome, idade e marcações.</li>' +
+      '<li>Com a pessoa selecionada, crie casal, filhos e relações. Toque em uma linha para mudar ou excluir.</li>' +
+      '<li>Use <b>Imprimir</b>, <b>Salvar PDF</b> ou <b>Salvar .docx</b>.</li></ol>' +
+      '<h3>Legenda</h3><div class="leg-box"><svg viewBox="-4 0 ' + (lg.w + 8) + ' ' + (lg.h + 4) + '">' + lg.svg + '</svg></div>' +
+      '<p class="nota">Os dados ficam guardados somente neste aparelho, no navegador. Nada é enviado pela internet. ' +
+      'Em aparelho compartilhado, use <b>Arquivo → Novo genograma</b> ao terminar.</p>';
+  } else if (sel.kind === 'pessoa' && (p = P(sel.id))) {
+    h = '<h2>Pessoa</h2>' +
+      '<div class="duas"><label class="campo"><span>Nome</span><input data-f="nome" value="' + esc(p.nome) + '" placeholder="Nome ou parentesco"></label>' +
+      '<label class="campo"><span>Idade</span><input data-f="idade" value="' + esc(p.idade) + '" maxlength="5" inputmode="numeric"></label></div>' +
+      '<div class="seg"><button data-act="sexoM" class="' + (p.sexo === 'M' ? 'on' : '') + '">Homem</button>' +
+      '<button data-act="sexoF" class="' + (p.sexo === 'F' ? 'on' : '') + '">Mulher</button></div>' +
+      [['foco', 'Criança em foco'], ['alcool', 'Abuso de álcool e droga'], ['preso', p.sexo === 'F' ? 'Presa' : 'Preso'], ['morte', 'Morte']].map(function (c) {
+        var o = { sexo: p.sexo }; o[c[0]] = 1;
+        return '<label class="marca-op"><input type="checkbox" data-f="' + c[0] + '"' + (p[c[0]] ? ' checked' : '') + '>' + icone(o) + c[1] + '</label>';
+      }).join('') +
+      '<h3>Família</h3><div class="grupo">' +
+      '<button class="bt" data-act="parceiro">+ Companheiro(a)</button>' +
+      '<button class="bt" data-act="casalCom">Casal com…</button>' +
+      '<button class="bt" data-act="filho">+ Filho</button>' +
+      '<button class="bt" data-act="filha">+ Filha</button>' +
+      '<button class="bt" data-act="filhoDe">É filho(a) de…</button></div>' +
+      '<h3>Relação com outra pessoa</h3>' +
+      '<label class="campo"><select id="relTipo">' + Object.keys(TIPOS_REL).map(function (t) {
+        return '<option value="' + t + '"' + (t === ultTipoRel ? ' selected' : '') + '>' + TIPOS_REL[t] + '</option>';
+      }).join('') + '</select></label>' +
+      '<div class="grupo"><button class="bt" data-act="relCom">Ligar a outra pessoa…</button></div>' +
+      '<div class="fim grupo"><button class="bt perigo" data-act="excluir">Excluir pessoa</button></div>';
+  } else if (sel.kind === 'uniao' && (u = U(sel.id))) {
+    a = P(u.a); b = P(u.b);
+    h = '<h2>Casal: ' + esc(nomeDe(a)) + ' e ' + esc(nomeDe(b)) + '</h2>' +
+      '<label class="campo"><span>Tipo</span><select data-f="tipo">' +
+      '<option value="oficial"' + (u.tipo === 'oficial' ? ' selected' : '') + '>Relação oficial (linha contínua)</option>' +
+      '<option value="naooficial"' + (u.tipo === 'naooficial' ? ' selected' : '') + '>Relação não oficial (linha tracejada)</option></select></label>' +
+      '<label class="marca-op"><input type="checkbox" data-f="rompida"' + (u.rompida ? ' checked' : '') + '>Rompimento de relação ( // )</label>' +
+      '<label class="campo" style="margin-top:0.7rem"><span>Texto na linha</span><input data-f="rotulo" value="' + esc(u.rotulo) + '" placeholder="Ex.: 5 anos"></label>' +
+      '<h3>Filhos deste casal</h3><div class="grupo">' +
+      '<button class="bt" data-act="filho">+ Filho</button>' +
+      '<button class="bt" data-act="filha">+ Filha</button>' +
+      '<button class="bt" data-act="ligarFilho">Ligar pessoa existente…</button></div>' +
+      '<div class="fim grupo"><button class="bt perigo" data-act="excluir">Excluir casal</button></div>';
+  } else if (sel.kind === 'relacao' && (r = Rl(sel.id))) {
+    h = '<h2>Relação: ' + esc(nomeDe(P(r.a))) + ' e ' + esc(nomeDe(P(r.b))) + '</h2>' +
+      '<label class="campo"><span>Tipo</span><select data-f="tipo">' + Object.keys(TIPOS_REL).map(function (t) {
+        return '<option value="' + t + '"' + (t === r.tipo ? ' selected' : '') + '>' + TIPOS_REL[t] + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="campo"><span>Texto na linha</span><input data-f="rotulo" value="' + esc(r.rotulo) + '" placeholder="Opcional"></label>' +
+      '<div class="fim grupo"><button class="bt perigo" data-act="excluir">Excluir relação</button></div>';
+  } else if (sel.kind === 'filho' && (f = Fl(sel.id))) {
+    k = P(f.filho); u = U(f.de);
+    var pais = u ? esc(nomeDe(P(u.a))) + ' e ' + esc(nomeDe(P(u.b))) : esc(nomeDe(P(f.de)));
+    h = '<h2>Filiação</h2><p><b>' + esc(nomeDe(k)) + '</b> é filho(a) de <b>' + pais + '</b>.</p>' +
+      '<div class="fim grupo"><button class="bt perigo" data-act="excluir">Remover esta ligação</button></div>';
+  } else {
+    sel = null; return painel();
+  }
+  pn.innerHTML = h;
+  pn.scrollTop = 0;
+  var rot = { pessoa: 'Pessoa selecionada', uniao: 'Casal selecionado', relacao: 'Relação selecionada', filho: 'Filiação selecionada' };
+  $('#alca').textContent = (sel ? rot[sel.kind] : 'Documento e legenda') + (painelFechado ? '  ▴ abrir' : '  ▾ fechar');
+  $('#painel').classList.toggle('fechado', painelFechado);
+}
+function tudo() { desenhar(); painel(); faixa(); botoes(); }
+function alvo() {
+  if (!sel) return S;
+  return sel.kind === 'pessoa' ? P(sel.id) : sel.kind === 'uniao' ? U(sel.id) : sel.kind === 'relacao' ? Rl(sel.id) : null;
+}
+function selecionar(s) {
+  commit();
+  sel = s;
+  if (s) painelFechado = false;
+  tudo();
+}
+
+/* ---------- edição ---------- */
+function livre(x, y) {
+  x = Math.round(x / 10) * 10; y = Math.round(y / 10) * 10;
+  var g = 0;
+  while (g++ < 60 && S.pessoas.some(function (p) { return Math.abs(p.x - x) < 80 && Math.abs(p.y - y) < 80; })) x += 100;
+  return { x: x, y: y };
+}
+function novaPessoa(sexo, x, y) {
+  var c = livre(x, y);
+  var p = { id: nid('p'), sexo: sexo, nome: '', idade: '', x: c.x, y: c.y, foco: false, alcool: false, preso: false, morte: false };
+  S.pessoas.push(p);
+  return p;
+}
+function addPessoa(sexo) {
+  commit();
+  var w = cv.clientWidth, h = cv.clientHeight;
+  var p = novaPessoa(sexo, view.x + w / (2 * view.k), view.y + h / (2 * view.k));
+  pick = null;
+  selecionar({ kind: 'pessoa', id: p.id });
+}
+function addParceiro() {
+  var p = P(sel.id);
+  if (!p) return;
+  var q = novaPessoa(p.sexo === 'M' ? 'F' : 'M', p.x + 140, p.y);
+  S.unioes.push({ id: nid('u'), a: p.id, b: q.id, tipo: 'oficial', rompida: false, rotulo: '' });
+  selecionar({ kind: 'pessoa', id: q.id });
+}
+function addFilho(sexo) {
+  var de;
+  if (sel.kind === 'uniao') de = sel.id;
+  else {
+    var us = S.unioes.filter(function (u) { return u.a === sel.id || u.b === sel.id; });
+    de = us.length ? us[us.length - 1].id : sel.id;
+    if (us.length > 1) toast('Filho(a) ligado ao casal mais recente. Para outro casal, toque na linha dele.');
+  }
+  var o = origem(de);
+  if (!o) return;
+  var ks = S.filhos.filter(function (f) { return f.de === de; }).map(function (f) { return P(f.filho); }).filter(Boolean);
+  var u = U(de);
+  var baseY = u ? Math.max(P(u.a).y, P(u.b).y) : P(de).y;
+  var x = ks.length ? Math.max.apply(null, ks.map(function (k) { return k.x; })) + 120 : o.x;
+  var y = ks.length ? ks[0].y : baseY + 180;
+  var q = novaPessoa(sexo, x, y);
+  S.filhos.push({ id: nid('f'), de: de, filho: q.id });
+  selecionar({ kind: 'pessoa', id: q.id });
+}
+function ligarFilho(de, filhoId) {
+  var u = U(de);
+  if (de === filhoId || (u && (u.a === filhoId || u.b === filhoId))) { toast('Uma pessoa não pode ser filha de si mesma.'); return false; }
+  S.filhos = S.filhos.filter(function (f) { return f.filho !== filhoId; });
+  S.filhos.push({ id: nid('f'), de: de, filho: filhoId });
+  return true;
+}
+function excluir() {
+  if (!sel) return;
+  commit();
+  var id = sel.id;
+  if (sel.kind === 'pessoa') {
+    S.unioes.filter(function (u) { return u.a === id || u.b === id; }).forEach(function (u) {
+      var outro = u.a === id ? u.b : u.a;
+      S.filhos.forEach(function (f) { if (f.de === u.id) f.de = outro; });
+    });
+    S.unioes = S.unioes.filter(function (u) { return u.a !== id && u.b !== id; });
+    S.filhos = S.filhos.filter(function (f) { return f.filho !== id && f.de !== id; });
+    S.relacoes = S.relacoes.filter(function (r) { return r.a !== id && r.b !== id; });
+    S.pessoas = S.pessoas.filter(function (p) { return p.id !== id; });
+  } else if (sel.kind === 'uniao') {
+    S.unioes = S.unioes.filter(function (u) { return u.id !== id; });
+    S.filhos = S.filhos.filter(function (f) { return f.de !== id; });
+  } else if (sel.kind === 'relacao') {
+    S.relacoes = S.relacoes.filter(function (r) { return r.id !== id; });
+  } else if (sel.kind === 'filho') {
+    S.filhos = S.filhos.filter(function (f) { return f.id !== id; });
+  }
+  selecionar(null);
+}
+/* Toque em algo do desenho: conclui uma ligação pendente ou seleciona. */
+function tocar(kind, id) {
+  if (!pick) { selecionar(kind ? { kind: kind, id: id } : null); return; }
+  var pk = pick, novo = null;
+  if (!kind) { pick = null; tudo(); return; }
+  if (pk.t === 'casal' && kind === 'pessoa') {
+    if (id === pk.de) return;
+    var ja = S.unioes.filter(function (u) { return (u.a === id && u.b === pk.de) || (u.b === id && u.a === pk.de); })[0];
+    if (ja) novo = { kind: 'uniao', id: ja.id };
+    else {
+      var u = { id: nid('u'), a: pk.de, b: id, tipo: 'oficial', rompida: false, rotulo: '' };
+      S.unioes.push(u); novo = { kind: 'uniao', id: u.id };
+    }
+  } else if (pk.t === 'rel' && kind === 'pessoa') {
+    if (id === pk.de) return;
+    var r = { id: nid('r'), a: pk.de, b: id, tipo: pk.tipo, rotulo: '' };
+    S.relacoes.push(r); novo = { kind: 'relacao', id: r.id };
+  } else if (pk.t === 'filhoDe' && (kind === 'uniao' || kind === 'pessoa')) {
+    if (!ligarFilho(id, pk.filho)) return;
+    novo = { kind: 'pessoa', id: pk.filho };
+  } else if (pk.t === 'ligarFilho' && kind === 'pessoa') {
+    if (!ligarFilho(pk.de, id)) return;
+    novo = { kind: 'uniao', id: pk.de };
+  } else {
+    toast(pk.t === 'filhoDe' ? 'Toque na linha de um casal ou em uma pessoa.' : 'Toque em uma pessoa.');
+    return;
+  }
+  pick = null;
+  selecionar(novo);
+}
+
+/* ---------- exportação ---------- */
+function quebrar(t, font, maxW) {
+  var out = [];
+  t.split(/\n/).forEach(function (par) {
+    var l = '';
+    par.split(/\s+/).forEach(function (w) {
+      var c = l ? l + ' ' + w : w;
+      if (l && larg(c, font) > maxW) { out.push(l); l = w; } else l = c;
+    });
+    out.push(l);
+  });
+  return out;
+}
+/* Monta a folha completa: título, genograma, observações e legenda. */
+function montar(o) {
+  var b = limites();
+  if (!b) return null;
+  var pad = 28, leg = S.legenda ? legenda(2) : null;
+  var titulo = o.titulo ? S.titulo.trim() : '', obs = o.obs ? S.obs.trim() : '';
+  var W = Math.ceil(Math.max(b.w, leg ? leg.w : 0, titulo ? larg(titulo, '700 24px ' + FONT) : 0, 360) + pad * 2);
+  var y = pad, s = '';
+  if (titulo) { s += txt(titulo, W / 2, y + 22, 24, { w: 700 }); y += 50; }
+  s += '<g transform="translate(' + n1((W - b.w) / 2 - b.x) + ' ' + n1(y - b.y) + ')">' + cena(false) + '</g>';
+  y += b.h + 20;
+  if (obs) {
+    s += txt('Observações:', pad, y + 12, 13, { w: 700, a: 'start' }); y += 20;
+    quebrar(obs, '13px ' + FONT, W - pad * 2).forEach(function (l) { s += txt(l, pad, y + 12, 13, { a: 'start' }); y += 18; });
+    y += 12;
+  }
+  if (leg) {
+    s += '<path d="M' + pad + ' ' + y + 'H' + (W - pad) + '" stroke="#bbb" stroke-width="1"/>'; y += 16;
+    s += '<g transform="translate(' + pad + ' ' + y + ')">' + leg.svg + '</g>'; y += leg.h;
+  }
+  var H = Math.ceil(y + pad);
+  return {
+    w: W, h: H,
+    svg: function (attrs) {
+      return '<svg xmlns="http://www.w3.org/2000/svg" ' + attrs + ' viewBox="0 0 ' + W + ' ' + H + '">' +
+        '<rect width="' + W + '" height="' + H + '" fill="#fff"/>' + s + '</svg>';
+    }
+  };
+}
+function rasterizar(m, escala) {
+  var area = m.w * m.h * escala * escala;
+  if (area > 12e6) escala *= Math.sqrt(12e6 / area);
+  var pw = Math.round(m.w * escala), ph = Math.round(m.h * escala);
+  return new Promise(function (ok, erro) {
+    var img = new Image();
+    img.onload = function () {
+      var c = document.createElement('canvas');
+      c.width = pw; c.height = ph;
+      var g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, pw, ph);
+      g.drawImage(img, 0, 0, pw, ph);
+      ok(c);
+    };
+    img.onerror = function () { erro(new Error('Não foi possível gerar a imagem.')); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(m.svg('width="' + pw + '" height="' + ph + '"'));
+  });
+}
+function bytesDe(canvas, tipo, q) {
+  return new Promise(function (ok, erro) {
+    canvas.toBlob(function (b) {
+      if (!b) { erro(new Error('Não foi possível gerar a imagem.')); return; }
+      var fr = new FileReader();
+      fr.onload = function () { ok(new Uint8Array(fr.result)); };
+      fr.onerror = function () { erro(fr.error); };
+      fr.readAsArrayBuffer(b);
+    }, tipo, q);
+  });
+}
+function baixar(blob, nome) {
+  var url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 20000);
+}
+function nomeArquivo(ext) {
+  var b = (S.titulo || 'genograma').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  return (b || 'genograma') + '.' + ext;
+}
+var A4 = [595.28, 841.89]; // pontos
+
+/* PDF de uma página com a folha como imagem em alta resolução. */
+function montarPDF(jpg, iw, ih, pw, ph, x, y, dw, dh, titulo) {
+  var enc = new TextEncoder(), partes = [], len = 0, offs = [];
+  function add(d) { var u = typeof d === 'string' ? enc.encode(d) : d; partes.push(u); len += u.length; }
+  function obj(n, corpo) { offs[n] = len; add(n + ' 0 obj\n' + corpo + '\nendobj\n'); }
+  var hex = 'FEFF';
+  for (var i = 0; i < titulo.length; i++) hex += ('000' + titulo.charCodeAt(i).toString(16)).slice(-4).toUpperCase();
+  var f = function (v) { return (Math.round(v * 100) / 100).toString(); };
+  var conteudo = 'q ' + f(dw) + ' 0 0 ' + f(dh) + ' ' + f(x) + ' ' + f(y) + ' cm /Im0 Do Q';
+  add('%PDF-1.4\n%âãÏÓ\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + f(pw) + ' ' + f(ph) + '] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+  offs[4] = len;
+  add('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + iw + ' /Height ' + ih +
+      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n');
+  add(jpg);
+  add('\nendstream\nendobj\n');
+  obj(5, '<< /Length ' + conteudo.length + ' >>\nstream\n' + conteudo + '\nendstream');
+  obj(6, '<< /Title <' + hex + '> /Creator (Genograma - Garantia de Direitos) >>');
+  var xref = len, t = 'xref\n0 7\n0000000000 65535 f \n';
+  for (var n = 1; n <= 6; n++) t += ('0000000000' + offs[n]).slice(-10) + ' 00000 n \n';
+  add(t + 'trailer\n<< /Size 7 /Root 1 0 R /Info 6 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+  return new Blob(partes, { type: 'application/pdf' });
+}
+function salvarPDF() {
+  var m = montar({ titulo: true, obs: true });
+  if (!m) { toast('Adicione pelo menos uma pessoa.'); return; }
+  var land = m.w >= m.h, pw = land ? A4[1] : A4[0], ph = land ? A4[0] : A4[1], mg = 28.35;
+  var s = Math.min((pw - 2 * mg) / m.w, (ph - 2 * mg) / m.h, 1.5);
+  var dw = m.w * s, dh = m.h * s;
+  return rasterizar(m, s * 300 / 72).then(function (c) {
+    return bytesDe(c, 'image/jpeg', 0.95).then(function (jpg) {
+      baixar(montarPDF(jpg, c.width, c.height, pw, ph, (pw - dw) / 2, ph - mg - dh, dw, dh, S.titulo || 'Genograma'), nomeArquivo('pdf'));
+      toast('PDF salvo: ' + nomeArquivo('pdf'));
+    });
+  });
+}
+
+/* ZIP sem compressão (suficiente para montar o .docx). */
+var CRC = (function () {
+  var t = new Uint32Array(256);
+  for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+  return t;
+})();
+function crc32(u) { var c = 0xFFFFFFFF; for (var i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zip(arqs, tipo) {
+  var enc = new TextEncoder(), partes = [], dir = [], off = 0;
+  arqs.forEach(function (a) {
+    var nm = enc.encode(a.nome), dados = typeof a.dados === 'string' ? enc.encode(a.dados) : a.dados, crc = crc32(dados);
+    var h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, dados.length, true); h.setUint32(22, dados.length, true);
+    h.setUint16(26, nm.length, true);
+    partes.push(new Uint8Array(h.buffer), nm, dados);
+    var c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, dados.length, true); c.setUint32(24, dados.length, true);
+    c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+    dir.push(new Uint8Array(c.buffer), nm);
+    off += 30 + nm.length + dados.length;
+  });
+  var tam = dir.reduce(function (s, p) { return s + p.length; }, 0);
+  var e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, arqs.length, true); e.setUint16(10, arqs.length, true);
+  e.setUint32(12, tam, true); e.setUint32(16, off, true);
+  return new Blob(partes.concat(dir, [new Uint8Array(e.buffer)]), { type: tipo });
+}
+function salvarDOCX() {
+  var m = montar({ titulo: false, obs: false });
+  if (!m) { toast('Adicione pelo menos uma pessoa.'); return; }
+  var titulo = S.titulo.trim(), obs = S.obs.trim();
+  var land = m.w >= m.h, pw = land ? A4[1] : A4[0], ph = land ? A4[0] : A4[1], mg = 36;
+  var aw = pw - 2 * mg, ah = ph - 2 * mg;
+  var linhasObs = obs ? obs.split(/\n/).reduce(function (s, l) { return s + Math.max(1, Math.ceil(l.length * 5.6 / aw)); }, 1) : 0;
+  var hImg = Math.max(ah * 0.4, ah - (titulo ? 44 : 0) - linhasObs * 15 - 12);
+  var s = Math.min(aw / m.w, hImg / m.h, 1.5);
+  var cx = Math.round(m.w * s * 12700), cy = Math.round(m.h * s * 12700);
+  var tw = function (pt) { return Math.round(pt * 20); };
+  var fonte = '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>';
+  function par(texto, rpr, ppr) {
+    return '<w:p><w:pPr>' + (ppr || '') + '</w:pPr><w:r><w:rPr>' + fonte + (rpr || '') + '</w:rPr><w:t xml:space="preserve">' + esc(texto) + '</w:t></w:r></w:p>';
+  }
+  return rasterizar(m, s * 220 / 72).then(function (c) {
+    return bytesDe(c, 'image/png');
+  }).then(function (png) {
+    var corpo = '';
+    if (titulo) corpo += par(titulo, '<w:b/><w:sz w:val="36"/>', '<w:spacing w:after="120"/><w:jc w:val="center"/>');
+    corpo += '<w:p><w:pPr><w:spacing w:after="120"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+      '<wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+      '<wp:docPr id="1" name="Genograma" descr="' + esc(titulo || 'Genograma') + '"/>' +
+      '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
+      '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic>' +
+      '<pic:nvPicPr><pic:cNvPr id="1" name="genograma.png"/><pic:cNvPicPr/></pic:nvPicPr>' +
+      '<pic:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+      '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+      '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic>' +
+      '</wp:inline></w:drawing></w:r></w:p>';
+    if (obs) {
+      corpo += par('Observações:', '<w:b/><w:sz w:val="22"/>', '<w:spacing w:after="40"/>');
+      obs.split(/\n/).forEach(function (l) { corpo += par(l, '<w:sz w:val="22"/>', '<w:spacing w:after="40"/>'); });
+    }
+    var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>' + corpo +
+      '<w:sectPr><w:pgSz w:w="' + tw(pw) + '" w:h="' + tw(ph) + '"' + (land ? ' w:orient="landscape"' : '') + '/>' +
+      '<w:pgMar w:top="' + tw(mg) + '" w:right="' + tw(mg) + '" w:bottom="' + tw(mg) + '" w:left="' + tw(mg) +
+      '" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>';
+    var x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    var arqs = [
+      { nome: '[Content_Types].xml', dados: x + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>' +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>' },
+      { nome: '_rels/.rels', dados: x + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
+      { nome: 'word/document.xml', dados: doc },
+      { nome: 'word/_rels/document.xml.rels', dados: x + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/></Relationships>' },
+      { nome: 'word/media/image1.png', dados: png }
+    ];
+    baixar(zip(arqs, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'), nomeArquivo('docx'));
+    toast('Documento salvo: ' + nomeArquivo('docx'));
+  });
+}
+function salvarPNG() {
+  var m = montar({ titulo: true, obs: true });
+  if (!m) { toast('Adicione pelo menos uma pessoa.'); return; }
+  return rasterizar(m, 3).then(function (c) { return bytesDe(c, 'image/png'); }).then(function (png) {
+    baixar(new Blob([png], { type: 'image/png' }), nomeArquivo('png'));
+    toast('Imagem salva: ' + nomeArquivo('png'));
+  });
+}
+function imprimir() {
+  var m = montar({ titulo: true, obs: true });
+  if (!m) { toast('Adicione pelo menos uma pessoa.'); return; }
+  var land = m.w >= m.h;
+  $('#pgcss').textContent = '@page { size: A4 ' + (land ? 'landscape' : 'portrait') + '; margin: 10mm; }';
+  $('#print').innerHTML = m.svg('preserveAspectRatio="xMidYMin meet" style="display:block;width:100%;height:auto;max-height:' +
+    (land ? 186 : 272) + 'mm"');
+  window.print();
+}
+function exportar(fn) {
+  commit();
+  try {
+    var r = fn();
+    if (r && r.catch) r.catch(function (e) { toast(e && e.message ? e.message : 'Não foi possível gerar o arquivo.'); });
+  } catch (e) { toast('Não foi possível gerar o arquivo.'); }
+}
+
+/* Inicia uma ligação que termina com um toque no desenho; no celular, recolhe o painel para mostrar o desenho. */
+function escolher(pk) {
+  commit();
+  pick = pk;
+  painelFechado = true;
+  tudo();
+}
+
+/* ---------- ações ---------- */
+function acao(a) {
+  var p;
+  switch (a) {
+    case 'addH': addPessoa('M'); break;
+    case 'addM': addPessoa('F'); break;
+    case 'undo': desfazer(); break;
+    case 'redo': refazer(); break;
+    case 'zoomIn': zoom(1.25, cv.clientWidth / 2, cv.clientHeight / 2); break;
+    case 'zoomOut': zoom(0.8, cv.clientWidth / 2, cv.clientHeight / 2); break;
+    case 'fit': ajustar(); desenhar(); break;
+    case 'cancelar': pick = null; painelFechado = false; tudo(); break;
+    case 'alca': painelFechado = !painelFechado; painel(); desenhar(); break;
+    case 'imprimir': commit(); imprimir(); break;
+    case 'pdf': exportar(salvarPDF); break;
+    case 'docx': exportar(salvarDOCX); break;
+    case 'png': exportar(salvarPNG); break;
+    case 'novo':
+      if (S.pessoas.length && !confirm('Apagar o genograma atual e começar um novo?')) break;
+      commit(); S = vazio(); sel = null; pick = null; commit(); ajustar(); tudo(); break;
+    case 'exemplo':
+      if (S.pessoas.length && !confirm('Substituir o genograma atual pelo exemplo?')) break;
+      commit(); S = exemplo(); sel = null; pick = null; commit(); ajustar(); tudo(); break;
+    case 'salvar':
+      commit();
+      baixar(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }), nomeArquivo('json'));
+      toast('Projeto salvo: ' + nomeArquivo('json'));
+      break;
+    case 'abrir': $('#arq').click(); break;
+    case 'sexoM': case 'sexoF':
+      p = P(sel.id); if (p) { p.sexo = a === 'sexoM' ? 'M' : 'F'; commit(); tudo(); } break;
+    case 'parceiro': commit(); addParceiro(); break;
+    case 'filho': commit(); addFilho('M'); break;
+    case 'filha': commit(); addFilho('F'); break;
+    case 'casalCom': escolher({ t: 'casal', de: sel.id }); break;
+    case 'filhoDe': escolher({ t: 'filhoDe', filho: sel.id }); break;
+    case 'ligarFilho': escolher({ t: 'ligarFilho', de: sel.id }); break;
+    case 'relCom':
+      ultTipoRel = $('#relTipo').value; escolher({ t: 'rel', de: sel.id, tipo: ultTipoRel }); break;
+    case 'excluir': excluir(); break;
+  }
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-act]');
+  var aberto = document.querySelector('details.menu[open]');
+  if (aberto && (b || !e.target.closest('details.menu'))) aberto.open = false;
+  if (b) acao(b.dataset.act);
+});
+pn.addEventListener('input', function (e) {
+  var f = e.target.dataset.f, o = alvo();
+  if (!f || !o) return;
+  var marca = e.target.type === 'checkbox';
+  o[f] = marca ? e.target.checked : e.target.value;
+  desenhar();
+  if (marca || e.target.tagName === 'SELECT') commit();
+});
+pn.addEventListener('change', function () { commit(); });
+$('#arq').addEventListener('change', function (e) {
+  var arq = e.target.files[0];
+  e.target.value = '';
+  if (!arq) return;
+  var fr = new FileReader();
+  fr.onload = function () {
+    var s = null;
+    try { s = normalizar(JSON.parse(fr.result)); } catch (err) {}
+    if (!s) { toast('Este arquivo não é um projeto de genograma.'); return; }
+    commit(); S = s; sel = null; pick = null; commit(); ajustar(); tudo();
+    toast('Projeto aberto.');
+  };
+  fr.readAsText(arq);
+});
+document.addEventListener('keydown', function (e) {
+  var campo = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if (e.key === 'Escape') { if (pick) { pick = null; tudo(); } else if (sel && !campo) selecionar(null); return; }
+  if (campo) return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && sel) { e.preventDefault(); excluir(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) refazer(); else desfazer(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); refazer(); }
+});
+window.addEventListener('afterprint', function () { $('#print').innerHTML = ''; });
+
+/* ---------- arrastar, mover a tela e pinça ---------- */
+var ptrs = {}, nPtrs = 0, drag = null;
+function local(e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function mundo(e) { var l = local(e); return { x: view.x + l.x / view.k, y: view.y + l.y / view.k }; }
+function pinca() {
+  var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]];
+  return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+cv.addEventListener('pointerdown', function (e) {
+  if (e.button > 0) return;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  var l = local(e);
+  if (!ptrs[e.pointerId]) nPtrs++;
+  ptrs[e.pointerId] = l;
+  if (nPtrs === 2) {
+    if (drag && drag.t === 'pessoa' && drag.moveu) commit();
+    var pz = pinca();
+    drag = { t: 'pinca', d: pz.d, k: view.k, wx: view.x + pz.x / view.k, wy: view.y + pz.y / view.k };
+    return;
+  }
+  if (nPtrs > 2) return;
+  var alvoEl = e.target.closest ? e.target.closest('[data-kind]') : null;
+  var kind = alvoEl ? alvoEl.dataset.kind : null, id = alvoEl ? alvoEl.dataset.id : null;
+  if (kind === 'pessoa' && !pick) {
+    var p = P(id), w = mundo(e);
+    drag = { t: 'pessoa', id: id, ox: p.x - w.x, oy: p.y - w.y, sx: l.x, sy: l.y, moveu: false };
+  } else {
+    drag = { t: 'tela', kind: kind, id: id, sx: l.x, sy: l.y, vx: view.x, vy: view.y, moveu: false };
+  }
+});
+cv.addEventListener('pointermove', function (e) {
+  if (!ptrs[e.pointerId] || !drag) return;
+  var l = local(e);
+  ptrs[e.pointerId] = l;
+  if (drag.t === 'pinca') {
+    if (nPtrs < 2) return;
+    var pz = pinca();
+    view.k = Math.min(3, Math.max(0.25, drag.k * pz.d / drag.d));
+    view.x = drag.wx - pz.x / view.k; view.y = drag.wy - pz.y / view.k;
+    desenhar();
+    return;
+  }
+  if (!drag.moveu && Math.hypot(l.x - drag.sx, l.y - drag.sy) < 5) return;
+  drag.moveu = true;
+  if (drag.t === 'pessoa') {
+    var p = P(drag.id), w = mundo(e);
+    if (!p) return;
+    var nx = Math.round((w.x + drag.ox) / 10) * 10, ny = Math.round((w.y + drag.oy) / 10) * 10;
+    for (var i = 0; i < S.pessoas.length; i++) {
+      var q = S.pessoas[i];
+      if (q.id !== p.id && Math.abs(q.y - ny) <= 12) { ny = q.y; break; }
+    }
+    p.x = nx; p.y = ny;
+    desenhar();
+  } else {
+    view.x = drag.vx - (l.x - drag.sx) / view.k;
+    view.y = drag.vy - (l.y - drag.sy) / view.k;
+    desenhar();
+  }
+});
+function soltar(e) {
+  if (!ptrs[e.pointerId]) return;
+  delete ptrs[e.pointerId]; nPtrs--;
+  var d = drag;
+  if (!d) return;
+  if (d.t === 'pinca') { if (nPtrs === 0) drag = null; return; }
+  drag = null;
+  if (e.type === 'pointercancel') { if (d.t === 'pessoa' && d.moveu) commit(); return; }
+  if (d.t === 'pessoa') {
+    if (d.moveu) { commit(); if (!sel || sel.id !== d.id) selecionar({ kind: 'pessoa', id: d.id }); }
+    else tocar('pessoa', d.id);
+  } else if (!d.moveu) tocar(d.kind, d.id);
+}
+cv.addEventListener('pointerup', soltar);
+cv.addEventListener('pointercancel', soltar);
+cv.addEventListener('wheel', function (e) {
+  e.preventDefault();
+  var l = local(e);
+  zoom(e.deltaY < 0 ? 1.1 : 1 / 1.1, l.x, l.y);
+}, { passive: false });
+
+/* ---------- início ---------- */
+(function iniciar() {
+  var salvo = null;
+  try { salvo = normalizar(JSON.parse(localStorage.getItem(KEY))); } catch (e) {}
+  S = salvo || exemplo();
+  ultimo = JSON.stringify(S);
+  var pronto = false;
+  function medir() {
+    if (!cv.clientWidth || !cv.clientHeight) return;
+    if (!pronto) { pronto = true; ajustar(); }
+    desenhar();
+  }
+  if (window.ResizeObserver) new ResizeObserver(medir).observe($('#palco'));
+  else window.addEventListener('resize', medir);
+  painelFechado = window.matchMedia('(max-width: 760px)').matches;
+  tudo();
+  medir();
+})();
+
+})();
+</script>
+</body>
+</html>
