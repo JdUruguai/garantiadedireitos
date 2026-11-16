@@ -2,10 +2,19 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Genograma · Garantia de Direitos</title>
+<meta name="theme-color" content="#1a4f3a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Genograma">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="genograma.webmanifest">
+<link rel="apple-touch-icon" href="icones/genograma-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/genograma-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style id="pgcss"></style>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,8 +29,11 @@
     --cinza-claro: #e8e4da;
   }
 
-  html, body { height: 100%; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
     font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
     background: var(--creme);
     color: var(--cinza);
@@ -39,6 +51,9 @@
     background: var(--verde);
     color: var(--creme);
     padding: 0.6rem 1rem;
+    padding-top: calc(0.6rem + env(safe-area-inset-top, 0px));
+    padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+    padding-right: calc(1rem + env(safe-area-inset-right, 0px));
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
@@ -130,18 +145,19 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
     cursor: default;
   }
   .barra {
     position: absolute;
     top: 10px;
-    left: 10px;
+    left: calc(10px + env(safe-area-inset-left, 0px));
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     max-width: calc(100% - 20px);
   }
-  .zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; }
+  .zoom { position: absolute; right: calc(10px + env(safe-area-inset-right, 0px)); bottom: 10px; display: flex; gap: 6px; }
   .bt {
     display: inline-flex;
     align-items: center;
@@ -220,7 +236,16 @@
     cursor: pointer;
     text-align: left;
   }
-  #pn { overflow-y: auto; padding: 1rem; flex: 1; min-height: 0; }
+  #pn {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 1rem;
+    padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    flex: 1;
+    min-height: 0;
+  }
   #pn h2 {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 1.25rem;
@@ -294,7 +319,7 @@
   #toast {
     position: fixed;
     left: 50%;
-    bottom: 22px;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
     background: #111;
     color: #fff;
@@ -312,6 +337,47 @@
 
   #print { display: none; }
 
+  /* FOLHA (arquivo pronto / instalar) */
+  #folha {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #folha[hidden] { display: none; }
+  .folha-cx {
+    width: 100%;
+    max-width: 460px;
+    max-height: 90%;
+    overflow-y: auto;
+    background: var(--creme);
+    border-radius: 14px 14px 0 0;
+    padding: 1.2rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+  }
+  .folha-cx h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--verde);
+    line-height: 1.15;
+    margin-bottom: 0.3rem;
+  }
+  .folha-cx p { margin-bottom: 0.8rem; }
+  .folha-cx .arq { font-weight: 600; word-break: break-all; }
+  .folha-cx ol { padding-left: 1.2rem; margin-bottom: 0.9rem; }
+  .folha-cx li { margin-bottom: 0.4rem; }
+  .folha-cx .bt { width: 100%; min-height: 48px; margin-top: 8px; text-decoration: none; font-size: 1rem; }
+  @media (min-width: 761px) {
+    #folha { align-items: center; }
+    .folha-cx { border-radius: 10px; padding-bottom: 1.1rem; }
+  }
+
   @media (max-width: 760px) {
     header { padding: 0.5rem 0.75rem; }
     .marca .tag { display: none; }
@@ -320,7 +386,9 @@
     .acoes { gap: 0.35rem; }
     .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
     .painel { border-left: 0; border-top: 1px solid #d8d2c4; max-height: 46vh; max-height: 46dvh; }
-    #alca { display: block; }
+    #alca { display: block; padding-left: calc(1rem + env(safe-area-inset-left, 0px)); }
+    #pn { padding-left: calc(1rem + env(safe-area-inset-left, 0px)); }
+    .painel.fechado #alca { padding-bottom: calc(0.45rem + env(safe-area-inset-bottom, 0px)); }
     .painel.fechado #pn { display: none; }
   }
 
@@ -355,6 +423,7 @@
         <button data-act="exemplo">Carregar exemplo</button>
         <button data-act="salvar">Salvar projeto para editar depois</button>
         <button data-act="abrir">Abrir projeto salvo…</button>
+        <button data-act="instalar" id="mInstalar" hidden>Instalar no iPhone ou iPad</button>
       </div>
     </details>
   </div>
@@ -390,6 +459,7 @@
 
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="print"></div>
+<div id="folha" hidden><div class="folha-cx" id="folhaCx" role="dialog" aria-modal="true" aria-labelledby="folhaT"></div></div>
 <input type="file" id="arq" accept=".json,application/json" hidden>
 
 <script>
@@ -1074,6 +1144,54 @@ function baixar(blob, nome) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(function () { URL.revokeObjectURL(url); }, 20000);
 }
+/* iPhone/iPad (o iPad recente se identifica como Mac com tela de toque). */
+var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+var INSTALADO = window.navigator.standalone === true ||
+  (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+var folhaUrl = null, folhaArq = null;
+function fecharFolha() {
+  $('#folha').hidden = true;
+  $('#folhaCx').innerHTML = '';
+  folhaArq = null;
+  if (folhaUrl) { var u = folhaUrl; folhaUrl = null; setTimeout(function () { URL.revokeObjectURL(u); }, 20000); }
+}
+function abrirFolha(html) {
+  $('#folhaCx').innerHTML = html;
+  $('#folha').hidden = false;
+}
+/* Entrega um arquivo gerado. No iOS, o salvamento precisa partir de um toque:
+   mostra uma folha com "Salvar ou compartilhar" (menu do sistema) e "Baixar". */
+function entregar(blob, nome, rotulo) {
+  if (!IOS) { baixar(blob, nome); toast(rotulo + ': ' + nome); return; }
+  fecharFolha();
+  var arq = null;
+  try {
+    arq = new File([blob], nome, { type: blob.type });
+    if (!(navigator.canShare && navigator.canShare({ files: [arq] }))) arq = null;
+  } catch (e) { arq = null; }
+  folhaArq = arq;
+  folhaUrl = URL.createObjectURL(blob);
+  abrirFolha('<h2 id="folhaT">Arquivo pronto</h2><p class="arq">' + esc(nome) + '</p>' +
+    (arq ? '<p>Toque em <b>Salvar ou compartilhar</b> e escolha <b>Salvar em Arquivos</b>, ou envie por WhatsApp, e-mail ou AirDrop.</p>' +
+           '<button class="bt cheio" data-act="compartilhar">Salvar ou compartilhar…</button>' : '') +
+    '<a class="bt' + (arq ? '' : ' cheio') + '" id="folhaBaixar" href="' + folhaUrl + '" download="' + esc(nome) + '">Baixar</a>' +
+    '<button class="bt" data-act="fecharFolha">Fechar</button>');
+}
+function compartilhar() {
+  if (!folhaArq) return;
+  navigator.share({ files: [folhaArq] }).then(fecharFolha, function (e) {
+    if (!e || e.name !== 'AbortError') toast('Não foi possível abrir o compartilhamento. Use "Baixar".');
+  });
+}
+function instalar() {
+  abrirFolha('<h2 id="folhaT">Instalar no iPhone ou iPad</h2>' +
+    '<p>O Genograma vira um aplicativo na Tela de Início, abre em tela cheia e funciona sem internet.</p>' +
+    '<ol><li>Abra esta página no <b>Safari</b>.</li>' +
+    '<li>Toque no botão <b>Compartilhar</b> (quadrado com seta para cima).</li>' +
+    '<li>Escolha <b>Adicionar à Tela de Início</b> e confirme em <b>Adicionar</b>.</li></ol>' +
+    '<p>Os genogramas feitos no aplicativo ficam guardados no próprio aparelho. Para levar um genograma de um lugar para outro, use <b>Arquivo → Salvar projeto</b>.</p>' +
+    '<button class="bt cheio" data-act="fecharFolha">Entendi</button>');
+}
 function nomeArquivo(ext) {
   var b = (S.titulo || 'genograma').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
@@ -1114,8 +1232,7 @@ function salvarPDF() {
   var dw = m.w * s, dh = m.h * s;
   return rasterizar(m, s * 300 / 72).then(function (c) {
     return bytesDe(c, 'image/jpeg', 0.95).then(function (jpg) {
-      baixar(montarPDF(jpg, c.width, c.height, pw, ph, (pw - dw) / 2, ph - mg - dh, dw, dh, S.titulo || 'Genograma'), nomeArquivo('pdf'));
-      toast('PDF salvo: ' + nomeArquivo('pdf'));
+      entregar(montarPDF(jpg, c.width, c.height, pw, ph, (pw - dw) / 2, ph - mg - dh, dw, dh, S.titulo || 'Genograma'), nomeArquivo('pdf'), 'PDF salvo');
     });
   });
 }
@@ -1205,16 +1322,14 @@ function salvarDOCX() {
         '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/></Relationships>' },
       { nome: 'word/media/image1.png', dados: png }
     ];
-    baixar(zip(arqs, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'), nomeArquivo('docx'));
-    toast('Documento salvo: ' + nomeArquivo('docx'));
+    entregar(zip(arqs, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'), nomeArquivo('docx'), 'Documento salvo');
   });
 }
 function salvarPNG() {
   var m = montar({ titulo: true, obs: true });
   if (!m) { toast('Adicione pelo menos uma pessoa.'); return; }
   return rasterizar(m, 3).then(function (c) { return bytesDe(c, 'image/png'); }).then(function (png) {
-    baixar(new Blob([png], { type: 'image/png' }), nomeArquivo('png'));
-    toast('Imagem salva: ' + nomeArquivo('png'));
+    entregar(new Blob([png], { type: 'image/png' }), nomeArquivo('png'), 'Imagem salva');
   });
 }
 function imprimir() {
@@ -1267,10 +1382,12 @@ function acao(a) {
       commit(); S = exemplo(); sel = null; pick = null; commit(); ajustar(); tudo(); break;
     case 'salvar':
       commit();
-      baixar(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }), nomeArquivo('json'));
-      toast('Projeto salvo: ' + nomeArquivo('json'));
+      entregar(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }), nomeArquivo('json'), 'Projeto salvo');
       break;
     case 'abrir': $('#arq').click(); break;
+    case 'instalar': instalar(); break;
+    case 'compartilhar': compartilhar(); break;
+    case 'fecharFolha': fecharFolha(); break;
     case 'sexoM': case 'sexoF':
       p = P(sel.id); if (p) { p.sexo = a === 'sexoM' ? 'M' : 'F'; commit(); tudo(); } break;
     case 'parceiro': commit(); addParceiro(); break;
@@ -1289,6 +1406,8 @@ document.addEventListener('click', function (e) {
   var aberto = document.querySelector('details.menu[open]');
   if (aberto && (b || !e.target.closest('details.menu'))) aberto.open = false;
   if (b) acao(b.dataset.act);
+  else if (e.target.id === 'folha') fecharFolha();
+  else if (e.target.id === 'folhaBaixar') setTimeout(fecharFolha, 600);
 });
 pn.addEventListener('input', function (e) {
   var f = e.target.dataset.f, o = alvo();
@@ -1315,6 +1434,7 @@ $('#arq').addEventListener('change', function (e) {
 });
 document.addEventListener('keydown', function (e) {
   var campo = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if (e.key === 'Escape' && !$('#folha').hidden) { fecharFolha(); return; }
   if (e.key === 'Escape') { if (pick) { pick = null; tudo(); } else if (sel && !campo) selecionar(null); return; }
   if (campo) return;
   if ((e.key === 'Delete' || e.key === 'Backspace') && sel) { e.preventDefault(); excluir(); }
@@ -1421,6 +1541,31 @@ cv.addEventListener('wheel', function (e) {
   painelFechado = window.matchMedia('(max-width: 760px)').matches;
   tudo();
   medir();
+
+  $('#mInstalar').hidden = !IOS || INSTALADO;
+
+  /* Com o teclado do iOS aberto, a área visível encolhe: ajusta a altura do app a ela. */
+  var vv = window.visualViewport;
+  if (vv) {
+    var acertar = function () {
+      if (Math.abs(vv.scale - 1) > 0.01) return;
+      document.body.style.height = vv.height + 'px';
+      if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
+    };
+    vv.addEventListener('resize', acertar);
+    vv.addEventListener('scroll', acertar);
+  }
+  /* Evita o zoom de pinça da página (Safari) sobre o desenho, que tem zoom próprio. */
+  ['gesturestart', 'gesturechange'].forEach(function (t) {
+    $('#palco').addEventListener(t, function (e) { e.preventDefault(); });
+  });
+
+  /* Funcionamento sem internet (só quando servido por http/https). */
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('genograma-sw.js').catch(function () {});
+    });
+  }
 })();
 
 })();

@@ -1,0 +1,17 @@
+{
+  "name": "Genograma · Garantia de Direitos",
+  "short_name": "Genograma",
+  "description": "Editor de genograma com impressão e exportação para PDF e .docx. Os dados ficam só no aparelho.",
+  "lang": "pt-BR",
+  "start_url": "./genograma.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f0e8",
+  "theme_color": "#1a4f3a",
+  "icons": [
+    { "src": "icones/genograma-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icones/genograma-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icones/genograma-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
