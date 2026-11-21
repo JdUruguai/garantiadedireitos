@@ -146,6 +146,13 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
 .section-h{font-family:var(--display);font-weight:800;font-size:22px;margin:6px 0 0}
 .prose p{margin:0;font-size:14px;line-height:1.6;color:#C9CCD9;max-width:62ch}
 
+/* som */
+.sel{-webkit-appearance:none;appearance:none;width:100%;height:36px;border-radius:10px;background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%238D92A7' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid var(--line);color:var(--fg);font:500 13px var(--body);padding:0 28px 0 10px;min-width:0}
+.selgrid{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center;font-size:13px;color:var(--muted)}
+.volrow{display:flex;align-items:center;gap:12px}
+.volrow input{flex:1;min-width:0}
+.banner{margin:0 max(16px,env(safe-area-inset-left,0px)) 6px;height:40px;border-radius:12px;background:var(--hot);color:#fff;font-weight:700;font-size:14px}
+
 /* abas */
 .tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-top:1px solid var(--line);
   padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
@@ -162,6 +169,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
     <div><h1 id="title">Polirritmo</h1><small id="subtitle">duas pulsações no mesmo tempo</small></div>
   </header>
 
+  <button class="banner" id="soundBanner" hidden>Sem som? Toque aqui para ativar o áudio</button>
   <main id="main">
     <!-- ============ POLIRRITMO ============ -->
     <section class="view" id="v-poli">
@@ -219,6 +227,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
             <button class="step" data-n="1" data-v="a" aria-label="Mais pulsos na voz A">+</button>
           </div>
           <button class="toggle" id="sndA" aria-pressed="true">Som<span class="sw"></span></button>
+          <select class="sel" id="selA" data-k="tA" aria-label="Timbre da voz A"></select>
         </div>
         <div class="voice" id="voiceB">
           <div class="voice-h"><b>Voz B</b><span id="shapeB">quadrado</span></div>
@@ -228,6 +237,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
             <button class="step" data-n="1" data-v="b" aria-label="Mais pulsos na voz B">+</button>
           </div>
           <button class="toggle" id="sndB" aria-pressed="true">Som<span class="sw"></span></button>
+          <select class="sel" id="selB" data-k="tB" aria-label="Timbre da voz B"></select>
         </div>
       </div>
 
@@ -236,6 +246,11 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
         <div class="chips" id="presets"></div>
         <button class="toggle" id="optGrid" aria-pressed="false" style="--c:#9AA0B4">Mostrar a grade do ciclo (MMC)<span class="sw"></span></button>
         <button class="toggle" id="optTick" aria-pressed="false" style="--c:#9AA0B4">Clique em todos os pulsos do ciclo<span class="sw"></span></button>
+      </div>
+
+      <div class="panel">
+        <span class="label">Volume</span>
+        <div class="volrow"><input type="range" class="vol" id="volP" min="0" max="100" aria-label="Volume"><button class="btn test" data-test="P">Testar som</button></div>
       </div>
 
       <div class="panel howto" id="howto"></div>
@@ -268,6 +283,16 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
       <div class="countin" id="countin" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span></div>
       <div class="deck" id="deck"></div>
       <p class="label" style="margin:0">Toque numa carta para trocar a figura</p>
+
+      <div class="panel">
+        <span class="label">Sons</span>
+        <div class="selgrid">
+          <label for="sel1">Voz 1</label><select class="sel" id="sel1" data-k="t1"></select>
+          <label for="sel2">Voz 2</label><select class="sel" id="sel2" data-k="t2"></select>
+          <label for="selM">Metrônomo</label><select class="sel" id="selM" data-k="tm"></select>
+        </div>
+        <div class="volrow"><input type="range" class="vol" id="volC" min="0" max="100" aria-label="Volume"><button class="btn test" data-test="C">Testar som</button></div>
+      </div>
 
       <div class="panel">
         <span class="label">Figuras no sorteio</span>
@@ -311,44 +336,97 @@ const store = {
 };
 
 /* ================= ÁUDIO ================= */
-let ac = null, master = null;
+/* Sons de metrônomo: amostras sintetizadas uma vez e tocadas como buffers (mais altas e secas que osciladores). */
+const TIMBRES = {madeira:'Bloco de madeira', clique:'Clique de metrônomo', clave:'Clave', cowbell:'Cowbell', chimbal:'Chimbal', bip:'Bip digital'};
+let ac = null, master = null, BUF = {}, VOL = store.get('vol', .9);
+function synth(kind, sr){
+  const dur = {madeira:.14, clique:.06, clave:.16, cowbell:.4, chimbal:.09, bip:.075}[kind];
+  const n = Math.floor(sr * dur), d = new Float32Array(n), TAU = Math.PI * 2;
+  let seed = 7, hp = 0, prev = 0;
+  const noise = () => { seed = (seed * 16807) % 2147483647; return seed / 1073741823.5 - 1; };
+  const sq = (f, t) => Math.sin(TAU*f*t) + Math.sin(TAU*3*f*t)/3 + Math.sin(TAU*5*f*t)/5 + Math.sin(TAU*7*f*t)/7;
+  for (let i = 0; i < n; i++) {
+    const t = i / sr, att = Math.min(1, t / .0008);
+    let x = 0;
+    if (kind === 'madeira') x = att * Math.exp(-t/.022) * (Math.sin(TAU*1180*t) + .35*Math.exp(-t/.007)*Math.sin(TAU*3210*t)) + noise()*Math.exp(-t/.0012)*.6;
+    else if (kind === 'clique') x = att * Math.exp(-t/.007) * Math.sin(TAU*2750*t) + noise()*Math.exp(-t/.0009)*.9;
+    else if (kind === 'clave') x = att * Math.exp(-t/.045) * Math.sin(TAU*2480*t) + noise()*Math.exp(-t/.001)*.35;
+    else if (kind === 'cowbell') x = att * (Math.exp(-t/.012)*.5 + Math.exp(-t/.11)*.5) * (sq(562,t) + sq(845,t)) * .5;
+    else if (kind === 'chimbal') { const w = noise(); hp = .55 * (hp + w - prev); prev = w; x = hp * Math.exp(-t/.022) * att; }
+    else if (kind === 'bip') x = Math.min(1, t/.002) * Math.min(1, (dur - t)/.008) * Math.sin(TAU*1000*t);
+    d[i] = x;
+  }
+  let peak = 0; for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(d[i]));
+  const k = .97 / (peak || 1); for (let i = 0; i < n; i++) d[i] *= k;
+  return d;
+}
 function audio(){
   if (!ac) {
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){} // toca mesmo com o iPhone no silencioso
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
     const AC = window.AudioContext || window.webkitAudioContext;
-    ac = new AC({ latencyHint: 'interactive' });
-    const comp = ac.createDynamicsCompressor();
-    comp.threshold.value = -10; comp.ratio.value = 4;
-    master = ac.createGain(); master.gain.value = .9;
-    master.connect(comp); comp.connect(ac.destination);
+    ac = new AC();
+    const lim = ac.createDynamicsCompressor();
+    lim.threshold.value = -4; lim.knee.value = 0; lim.ratio.value = 12; lim.attack.value = .001; lim.release.value = .06;
+    master = ac.createGain(); master.gain.value = VOL * 1.4;
+    master.connect(lim); lim.connect(ac.destination);
+    Object.keys(TIMBRES).forEach(kd => { const data = synth(kd, ac.sampleRate), b = ac.createBuffer(1, data.length, ac.sampleRate); b.getChannelData(0).set(data); BUF[kd] = b; });
     const b = ac.createBuffer(1, 1, 22050), s = ac.createBufferSource();
     s.buffer = b; s.connect(ac.destination); s.start(0);
   }
-  if (ac.state !== 'running') ac.resume();
+  if (ac.state !== 'running') { try { ac.resume(); } catch(e){} }
   return ac;
 }
+/* iOS: um <audio> silencioso em loop põe a sessão de áudio em "reprodução",
+   assim o som sai mesmo com a chave de silêncio ligada (como nos apps de metrônomo). */
+let silentEl = null;
+function wavBytes(){
+  const sr = 8000, n = 2000, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4, 36 + n*2, true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
+  return new Uint8Array(buf);
+}
+function unlock(){
+  audio();
+  try {
+    if (!silentEl) {
+      const bytes = wavBytes();
+      silentEl = document.createElement('audio');
+      silentEl.setAttribute('playsinline', ''); silentEl.setAttribute('x-webkit-airplay', 'deny');
+      silentEl.loop = true; silentEl.preload = 'auto';
+      silentEl.addEventListener('error', () => {
+        if (silentEl.dataset.fallback) return; silentEl.dataset.fallback = '1';
+        let bin = ''; bytes.forEach(c => { bin += String.fromCharCode(c); });
+        silentEl.src = 'data:audio/wav;base64,' + btoa(bin); silentEl.play().catch(() => {});
+      });
+      silentEl.src = URL.createObjectURL(new Blob([bytes], {type: 'audio/wav'}));
+    }
+    if (silentEl.paused) { const pp = silentEl.play(); if (pp && pp.catch) pp.catch(() => {}); }
+  } catch(e){}
+}
+['touchend','click','keydown'].forEach(ev => document.addEventListener(ev, unlock, {capture: true, passive: true}));
 const latency = () => ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
-function tone(t, {f=1000, g=.5, d=.07, type='triangle', pan=0, drop=.55} = {}){
-  const o = ac.createOscillator(), v = ac.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(f, t);
-  o.frequency.exponentialRampToValueAtTime(f * drop, t + d);
-  v.gain.setValueAtTime(.0001, t);
-  v.gain.exponentialRampToValueAtTime(g, t + .003);
-  v.gain.exponentialRampToValueAtTime(.0001, t + d);
-  o.connect(v);
-  let out = v;
-  if (pan && ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = pan; v.connect(p); out = p; }
+function play(kind, t, {rate = 1, gain = .8, pan = 0} = {}){
+  const b = BUF[kind] || BUF.madeira; if (!b) return;
+  const s = ac.createBufferSource(), g = ac.createGain();
+  s.buffer = b; s.playbackRate.value = rate; g.gain.value = gain; s.connect(g);
+  let out = g;
+  if (pan && ac.createStereoPanner) { const pn = ac.createStereoPanner(); pn.pan.value = pan; g.connect(pn); out = pn; }
   out.connect(master);
-  o.start(t); o.stop(t + d + .03);
+  s.start(Math.max(t, ac.currentTime));
+}
+function setVolume(v){
+  VOL = Math.max(0, Math.min(1, v)); store.set('vol', VOL);
+  if (master) master.gain.value = VOL * 1.4;
+  document.querySelectorAll('.vol').forEach(r => { r.value = Math.round(VOL * 100); });
 }
 const SND = {
-  A: (t, acc) => tone(t, {f: acc ? 1560 : 1250, g: acc ? .75 : .5, d: .07, pan: -.45}),
-  B: (t, acc) => tone(t, {f: acc ? 760 : 560, g: acc ? .85 : .6, d: .09, pan: .45}),
-  grid: t => tone(t, {f: 3200, g: .07, d: .025, type: 'sine', drop: .9}),
-  metro: (t, acc) => tone(t, {f: acc ? 2100 : 1700, g: acc ? .3 : .17, d: .035, type: 'sine', drop: .9}),
-  v1: t => tone(t, {f: 1050, g: .55, d: .08, pan: -.2}),
-  v2: t => tone(t, {f: 620, g: .6, d: .1, pan: .2})
+  A: (t, acc) => play(P.tA, t, {rate: acc ? 1.12 : 1, gain: acc ? 1 : .75, pan: -.4}),
+  B: (t, acc) => play(P.tB, t, {rate: acc ? .9 : .8, gain: acc ? 1 : .8, pan: .4}),
+  grid: t => play('clique', t, {rate: 1.5, gain: .14}),
+  metro: (t, acc) => play(C.tm, t, {rate: acc ? 1.25 : 1, gain: acc ? .7 : .45}),
+  v1: t => play(C.t1, t, {rate: 1, gain: .9, pan: -.15}),
+  v2: t => play(C.t2, t, {rate: .8, gain: .9, pan: .15})
 };
 let wl = null;
 async function wake(on){
@@ -362,7 +440,7 @@ const ICON_STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5
 function setPlayBtn(btn, on){ btn.innerHTML = on ? ICON_STOP : ICON_PLAY; btn.classList.toggle('on', on); btn.setAttribute('aria-label', on ? 'Parar' : 'Tocar'); }
 
 /* ================= POLIRRITMO ================= */
-const P = Object.assign({a:3, b:4, bpm:80, sndA:true, sndB:true, grid:false, tick:false, view:'formas'}, store.get('poli', {}));
+const P = Object.assign({a:3, b:4, bpm:80, sndA:true, sndB:true, grid:false, tick:false, view:'formas', tA:'madeira', tB:'cowbell'}, store.get('poli', {}));
 const pr = {playing:false, anchorT:0, anchorPh:0, next:0, L:12, timer:null};
 const cycleDur = () => P.b * 60 / P.bpm;
 const phaseAt = t => pr.anchorPh + (t - pr.anchorT) / cycleDur();
@@ -381,7 +459,7 @@ function prSchedule(){
   }
 }
 function prStart(){
-  audio();
+  unlock();
   pr.L = lcm(P.a, P.b); pr.anchorT = ac.currentTime + .1; pr.anchorPh = 0; pr.next = 0;
   pr.playing = true; clearInterval(pr.timer); pr.timer = setInterval(prSchedule, 25); prSchedule();
   setPlayBtn($('#playP'), true); wake(true);
@@ -654,13 +732,13 @@ function pie(id){
 /* ================= CARTAS ================= */
 const CARD_IDS = ['q','qr','e2','s4','es','se','de','t3','x6'];
 const PASTEL = ['#F7D154','#B5E36B','#F4A6B8','#F08A6E','#F5A54A','#8EC9F0'];
-const C = Object.assign({bpm:72, n:8, voices:1, metro:true, count:true, set:['q','qr','e2','s4','es','se']}, store.get('cards', {}));
+const C = Object.assign({bpm:72, n:8, voices:1, metro:true, count:true, set:['q','qr','e2','s4','es','se'], t1:'madeira', t2:'cowbell', tm:'clique'}, store.get('cards', {}));
 C.seq = store.get('seq', null);
 const cr = {playing:false, anchorT:0, anchorB:0, next:0, timer:null};
 const beatDur = () => 60 / C.bpm;
 const beatTime = b => cr.anchorT + (b - cr.anchorB) * beatDur();
 const rnd = a => a[Math.floor(Math.random() * a.length)];
-function saveCards(){ store.set('cards', {bpm:C.bpm, n:C.n, voices:C.voices, metro:C.metro, count:C.count, set:C.set}); store.set('seq', C.seq); }
+function saveCards(){ store.set('cards', {bpm:C.bpm, n:C.n, voices:C.voices, metro:C.metro, count:C.count, set:C.set, t1:C.t1, t2:C.t2, tm:C.tm}); store.set('seq', C.seq); }
 function randomFig(prev){ let f, tries = 0; do { f = rnd(C.set); tries++; } while (f === 'qr' && prev === 'qr' && tries < 6); return f; }
 function shuffle(){
   C.seq = [0, 1].map(() => {
@@ -715,7 +793,7 @@ function crSchedule(){
   }
 }
 function crStart(){
-  audio();
+  unlock();
   const start = C.count ? -4 : 0;
   cr.anchorT = ac.currentTime + .1; cr.anchorB = start; cr.next = start; cr.playing = true;
   clearInterval(cr.timer); cr.timer = setInterval(crSchedule, 25); crSchedule();
@@ -804,7 +882,7 @@ $('#figlist').innerHTML = FIG_ORDER.map(id => {
 let figPlay = null;
 $('#figlist').addEventListener('click', e => {
   const row = e.target.closest('.figrow'); if (!row) return;
-  audio(); prStop(); crStop();
+  unlock(); prStop(); crStop();
   const F = FIG[row.dataset.id], bd = beatDur(), t0 = ac.currentTime + .08;
   for (let b = 0; b < Math.max(1, F.beats); b++) SND.metro(t0 + b * bd, b === 0);
   F.on.forEach(o => SND.v1(t0 + o * F.beats * bd));
@@ -840,13 +918,14 @@ function showTab(t){
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
 function loop(){
   const vt = ac ? ac.currentTime - latency() : 0;
+  banner.hidden = !((pr.playing || cr.playing) && ac && ac.state !== 'running');
   if (tab === 'poli') renderPoli(vt);
   else if (tab === 'cards') renderCards(vt);
   else renderFig(vt);
   requestAnimationFrame(loop);
 }
 window.addEventListener('resize', sizeStage);
-document.addEventListener('visibilitychange', () => { if (document.hidden) { prStop(); crStop(); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { prStop(); crStop(); if (silentEl) silentEl.pause(); } });
 document.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.code === 'Space') { e.preventDefault(); if (tab === 'poli') $('#playP').click(); else if (tab === 'cards') $('#playC').click(); }
@@ -875,6 +954,28 @@ try {
     const l = document.createElement('link'); l.rel = 'apple-touch-icon'; l.href = ic.toDataURL('image/png'); document.head.appendChild(l);
   }
 } catch(e){}
+
+/* sons: seletores, volume, teste */
+const OPTS = Object.entries(TIMBRES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+document.querySelectorAll('select.sel').forEach(sel => {
+  sel.innerHTML = OPTS;
+  const obj = ['tA','tB'].includes(sel.dataset.k) ? P : C;
+  sel.value = obj[sel.dataset.k];
+  sel.addEventListener('change', () => {
+    obj[sel.dataset.k] = sel.value; obj === P ? savePoli() : saveCards();
+    audio(); const t = ac.currentTime + .03, k = sel.dataset.k;
+    if (k === 'tA') SND.A(t, false); else if (k === 'tB') SND.B(t, false); else if (k === 't1') SND.v1(t); else if (k === 't2') SND.v2(t); else SND.metro(t, true);
+  });
+});
+document.querySelectorAll('.vol').forEach(r => r.addEventListener('input', () => setVolume(r.value / 100)));
+setVolume(VOL);
+document.querySelectorAll('.test').forEach(b => b.addEventListener('click', () => {
+  unlock(); const t = ac.currentTime + .05;
+  if (b.dataset.test === 'P') { SND.A(t, true); SND.B(t + .35, true); }
+  else { SND.metro(t, true); SND.v1(t + .3); SND.v2(t + .6); }
+}));
+const banner = $('#soundBanner');
+banner.addEventListener('click', () => { unlock(); });
 
 /* início */
 setToggle($('#sndA'), P.sndA); setToggle($('#sndB'), P.sndB); setToggle($('#optGrid'), P.grid); setToggle($('#optTick'), P.tick);
