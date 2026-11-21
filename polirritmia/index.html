@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Polirritmia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@600;700&family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+
+  <header class="topo">
+    <h1>Polirritmia</h1>
+    <p class="faixa">Ritmos diferentes compartilhando o mesmo ciclo</p>
+  </header>
+
+  <main class="grade">
+
+    <!-- CONTROLES -->
+    <section class="cartao cartao-controle" aria-labelledby="t-controle">
+      <h2 class="cabeca" id="t-controle"><span class="num">1</span>Monte o ritmo</h2>
+      <div class="corpo">
+
+        <div class="transporte">
+          <button id="btnPlay" class="btn-play" type="button" aria-pressed="false">
+            <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+            <svg class="ico-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+            <span id="lblPlay">Tocar</span>
+          </button>
+          <div class="razao" aria-live="polite">
+            <span class="razao-a" id="razaoA">3</span><span class="razao-x">contra</span><span class="razao-b" id="razaoB">2</span>
+          </div>
+        </div>
+
+        <div class="andamento">
+          <label for="bpm" class="rotulo">Andamento</label>
+          <div class="linha-bpm">
+            <button type="button" class="btn-mini" data-bpm="-1" aria-label="Diminuir andamento">−</button>
+            <input type="range" id="bpm" min="30" max="240" value="80">
+            <button type="button" class="btn-mini" data-bpm="1" aria-label="Aumentar andamento">+</button>
+            <output id="bpmOut" for="bpm" class="bpm-valor">80</output><span class="bpm-un">BPM</span>
+          </div>
+          <div class="linha-ref">
+            <label for="ref">O BPM conta os pulsos da</label>
+            <select id="ref">
+              <option value="b">camada B (base)</option>
+              <option value="a">camada A</option>
+              <option value="c">volta inteira (ciclo)</option>
+            </select>
+            <span class="duracao" id="duracao">1,50 s por ciclo</span>
+          </div>
+        </div>
+
+        <div class="camadas">
+          <div class="camada camada-a">
+            <div class="camada-topo">
+              <span class="tag tag-a">A</span>
+              <span class="camada-nome">Mão direita</span>
+              <button type="button" class="btn-mudo" id="muteA" aria-pressed="false" title="Silenciar camada A">Som ligado</button>
+            </div>
+            <div class="stepper">
+              <button type="button" class="btn-mini" data-layer="a" data-d="-1" aria-label="Menos pulsos na camada A">−</button>
+              <output id="valA" class="stepper-valor">3</output>
+              <button type="button" class="btn-mini" data-layer="a" data-d="1" aria-label="Mais pulsos na camada A">+</button>
+              <span class="stepper-txt">pulsos por ciclo</span>
+            </div>
+            <div class="camada-ajustes">
+              <label for="somA">Timbre</label>
+              <select id="somA">
+                <option value="clave">Clave</option>
+                <option value="caixa">Caixa</option>
+                <option value="bumbo">Bumbo</option>
+                <option value="conga">Conga</option>
+                <option value="cowbell">Agogô</option>
+                <option value="bip">Bip</option>
+              </select>
+              <label for="volA">Volume</label>
+              <input type="range" id="volA" min="0" max="100" value="80">
+            </div>
+          </div>
+
+          <div class="camada camada-b">
+            <div class="camada-topo">
+              <span class="tag tag-b">B</span>
+              <span class="camada-nome">Mão esquerda</span>
+              <button type="button" class="btn-mudo" id="muteB" aria-pressed="false" title="Silenciar camada B">Som ligado</button>
+            </div>
+            <div class="stepper">
+              <button type="button" class="btn-mini" data-layer="b" data-d="-1" aria-label="Menos pulsos na camada B">−</button>
+              <output id="valB" class="stepper-valor">2</output>
+              <button type="button" class="btn-mini" data-layer="b" data-d="1" aria-label="Mais pulsos na camada B">+</button>
+              <span class="stepper-txt">pulsos por ciclo</span>
+            </div>
+            <div class="camada-ajustes">
+              <label for="somB">Timbre</label>
+              <select id="somB">
+                <option value="bumbo">Bumbo</option>
+                <option value="clave">Clave</option>
+                <option value="caixa">Caixa</option>
+                <option value="conga">Conga</option>
+                <option value="cowbell">Agogô</option>
+                <option value="bip">Bip</option>
+              </select>
+              <label for="volB">Volume</label>
+              <input type="range" id="volB" min="0" max="100" value="85">
+            </div>
+          </div>
+        </div>
+
+        <div class="presets" role="group" aria-label="Combinações prontas">
+          <span class="rotulo">Prontos</span>
+          <div class="chips" id="presets"></div>
+        </div>
+
+        <div class="opcoes">
+          <label class="chave"><input type="checkbox" id="optSub"><span>Ouvir a grade comum (subdivisão)</span></label>
+          <label class="chave"><input type="checkbox" id="optAcento" checked><span>Acentuar o início do ciclo</span></label>
+          <label class="chave"><input type="checkbox" id="optContagem"><span>Contagem de entrada (1 ciclo)</span></label>
+        </div>
+
+        <p class="atalhos">Teclado: <kbd>Espaço</kbd> toca/para · <kbd>↑</kbd><kbd>↓</kbd> andamento · <kbd>J</kbd> mão direita · <kbd>F</kbd> mão esquerda</p>
+      </div>
+    </section>
+
+    <!-- CICLO -->
+    <section class="cartao cartao-ciclo" aria-labelledby="t-ciclo">
+      <h2 class="cabeca" id="t-ciclo"><span class="num">2</span>Ciclo comum</h2>
+      <div class="corpo">
+        <p class="legenda">As duas camadas se reencontram no início de cada volta.</p>
+        <div class="tela-circulo"><canvas id="cvCirculo" aria-label="Visualização circular do ciclo" role="img"></canvas></div>
+        <div class="contadores">
+          <div class="contador"><span class="tag tag-a">A</span><span id="cntA" class="contador-num">–</span></div>
+          <div class="contador contador-ciclo"><span class="rotulo">Ciclo</span><span id="cntCiclo" class="contador-num">0</span></div>
+          <div class="contador"><span class="tag tag-b">B</span><span id="cntB" class="contador-num">–</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LINHA DO TEMPO -->
+    <section class="cartao cartao-linha" aria-labelledby="t-linha">
+      <h2 class="cabeca" id="t-linha"><span class="num">3</span>Linha do tempo e frase-guia</h2>
+      <div class="corpo">
+        <div class="tela-linha"><canvas id="cvLinha" aria-label="Linha do tempo das duas camadas" role="img"></canvas></div>
+        <div class="frase-bloco">
+          <div class="frase-topo">
+            <span class="rotulo">Frase-guia</span>
+            <span class="frase-info" id="fraseInfo">grade de 6 partes</span>
+          </div>
+          <div class="frase" id="frase" aria-label="Sílabas da frase-guia"></div>
+          <p class="frase-legenda">
+            <span class="sil sil-ab">TUM</span> as duas juntas
+            <span class="sil sil-a">ta</span> só A
+            <span class="sil sil-b">pá</span> só B
+            <span class="sil sil-0">·</span> silêncio
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOQUE JUNTO -->
+    <section class="cartao cartao-toque" aria-labelledby="t-toque">
+      <h2 class="cabeca" id="t-toque"><span class="num">4</span>Toque junto</h2>
+      <div class="corpo">
+        <p class="legenda">Toque cada camada com uma mão. O app mede quanto você adiantou ou atrasou.</p>
+        <div class="pads">
+          <button type="button" class="pad pad-b" id="padB">
+            <span class="pad-tecla">F</span>
+            <span class="pad-nome">Mão esquerda</span>
+            <span class="pad-cam">camada B · <b id="padBn">2</b></span>
+            <span class="pad-feedback" id="fbB">–</span>
+          </button>
+          <button type="button" class="pad pad-a" id="padA">
+            <span class="pad-tecla">J</span>
+            <span class="pad-nome">Mão direita</span>
+            <span class="pad-cam">camada A · <b id="padAn">3</b></span>
+            <span class="pad-feedback" id="fbA">–</span>
+          </button>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="rotulo">Toques</span><span class="stat-num" id="stToques">0</span></div>
+          <div class="stat"><span class="rotulo">Na mosca</span><span class="stat-num" id="stMosca">–</span></div>
+          <div class="stat"><span class="rotulo">Desvio médio</span><span class="stat-num" id="stDesvio">–</span></div>
+          <div class="stat"><span class="rotulo">Tendência</span><span class="stat-num" id="stTend">–</span></div>
+        </div>
+        <div class="toque-rodape">
+          <label class="chave"><input type="checkbox" id="optSomToque" checked><span>Som no toque</span></label>
+          <button type="button" class="btn-texto" id="btnZerar">Zerar placar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRÁTICA -->
+    <section class="cartao cartao-pratica" aria-labelledby="t-pratica">
+      <h2 class="cabeca" id="t-pratica"><span class="num">5</span>Como praticar</h2>
+      <div class="corpo">
+        <ol class="etapas" id="etapas">
+          <li data-etapa="0"><b>Separe</b><span>só a camada A</span></li>
+          <li data-etapa="1"><b>Separe</b><span>só a camada B</span></li>
+          <li data-etapa="2"><b>Estabilize</b><span>A + B com a grade</span></li>
+          <li data-etapa="3"><b>Combine</b><span>A + B, sem grade</span></li>
+          <li data-etapa="4"><b>Varie</b><span>camadas somem ao acaso</span></li>
+        </ol>
+        <div class="pratica-ajustes">
+          <label for="ciclosEtapa">Ciclos por etapa</label>
+          <select id="ciclosEtapa">
+            <option value="2">2</option>
+            <option value="4" selected>4</option>
+            <option value="8">8</option>
+          </select>
+          <label for="incBpm">Ao fim da rodada, acelerar</label>
+          <select id="incBpm">
+            <option value="0">não acelerar</option>
+            <option value="3">+3 BPM</option>
+            <option value="5" selected>+5 BPM</option>
+            <option value="10">+10 BPM</option>
+          </select>
+        </div>
+        <div class="pratica-acoes">
+          <button type="button" class="btn-pratica" id="btnPratica" aria-pressed="false">Iniciar prática guiada</button>
+          <span class="pratica-status" id="praticaStatus">Desligada. O app toca as duas camadas sem parar.</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <details class="entenda">
+    <summary>Entenda a polirritmia</summary>
+    <div class="entenda-grade">
+      <div><h3>O que é?</h3><p>Duas divisões rítmicas soam ao mesmo tempo. Num 3 contra 2, uma camada divide o ciclo em três partes iguais e a outra, em duas.</p></div>
+      <div><h3>Ciclo comum</h3><p>As camadas começam juntas e só voltam a coincidir no início do próximo ciclo. Entre um e outro, cada uma segue seu próprio pulso.</p></div>
+      <div><h3>Grade comum</h3><p>O menor múltiplo comum dos dois números dá a grade onde todos os toques cabem. Em 3:2 são 6 partes; em 4:3, 12.</p></div>
+      <div><h3>Camadas</h3><p>Dê cada camada a uma parte do corpo: mão direita no 3, mão esquerda ou pé no 2.</p></div>
+      <div><h3>Como sentir</h3><p>Use a frase-guia em voz alta, balance o corpo no pulso da base e repita até o padrão soar como uma só melodia.</p></div>
+      <div><h3>Como praticar</h3><p>Separe as camadas, estabilize com a grade, combine sem ajuda e depois varie o andamento e os silêncios.</p></div>
+    </div>
+  </details>
+
+  <footer class="rodape">
+    <p class="faixa faixa-rodape">Na polirritmia, camadas diferentes convivem dentro do mesmo tempo.</p>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
