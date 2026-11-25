@@ -1,0 +1,672 @@
+<script>
+(function () {
+  'use strict';
+
+  var DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  var E = {
+    init: null, escala: null, semana: null, visao: 'grade', aba: 'escala', ocupado: false,
+    avisosGeracao: [], mu: {}, mc: {}, mk: {}, corEdit: []
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* ---------- montagem de DOM sem innerHTML ---------- */
+  function add(n, c) {
+    if (c === null || c === undefined || c === false) return;
+    if (Array.isArray(c)) { c.forEach(function (x) { add(n, x); }); return; }
+    n.appendChild(typeof c === 'object' ? c : document.createTextNode(String(c)));
+  }
+  function el(tag, props) {
+    var n = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (k) {
+      var v = props[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k.indexOf('on') === 0 && typeof v === 'function') n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) add(n, arguments[i]);
+    return n;
+  }
+  function limpar(n) { while (n.firstChild) n.removeChild(n.firstChild); return n; }
+
+  /* ---------- datas ---------- */
+  function somar(iso, n) {
+    var p = iso.split('-');
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n));
+    return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+  }
+  function dow(iso) { var p = iso.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay(); }
+  function inicioSemana(iso) { return somar(iso, -dow(iso)); }
+  function dm(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7); }
+  function dmy(iso) { return dm(iso) + '/' + iso.slice(0, 4); }
+
+  /* ---------- servidor ---------- */
+  function api(nome) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (ok, erro) {
+      var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { erro(e); });
+      r[nome].apply(r, args);
+    });
+  }
+  function textoErro(e) { return String((e && e.message) || e).replace(/^(Error|Exception):\s*/, ''); }
+
+  function avisar(texto, erro) {
+    var m = $('msg');
+    m.textContent = texto || '';
+    m.className = erro ? 'erro' : '';
+    m.setAttribute('role', erro ? 'alert' : 'status');
+    if (texto) {
+      m.appendChild(el('button', { type: 'button', class: 'btn sec mini', text: 'Fechar', onclick: function () { m.textContent = ''; } }));
+    }
+  }
+
+  function ocupar(sim) {
+    E.ocupado = sim;
+    document.body.setAttribute('aria-busy', sim ? 'true' : 'false');
+    Array.prototype.forEach.call(document.querySelectorAll('.btn'), function (b) { b.disabled = sim; });
+  }
+
+  /** Executa uma chamada ao servidor travando os botões; erros viram mensagem na tela. */
+  function executar(fn, textoEspera, idErro) {
+    if (E.ocupado) return Promise.resolve(undefined);
+    ocupar(true);
+    if (textoEspera) avisar(textoEspera);
+    return fn().then(function (r) { ocupar(false); return r; }, function (e) {
+      ocupar(false);
+      // Com um diálogo aberto, o erro aparece dentro dele (o aviso do rodapé ficaria escondido atrás).
+      if (idErro) { avisar(''); $(idErro).textContent = textoErro(e); } else avisar(textoErro(e), true);
+      return undefined;
+    });
+  }
+
+  /* ---------- confirmação própria (window.confirm é bloqueado no Planilhas) ---------- */
+  function confirmar(titulo, linhas, rotulo) {
+    return new Promise(function (resolve) {
+      var d = $('dlgConfirma');
+      var resolvido = false;
+      function fim(v) { if (resolvido) return; resolvido = true; if (d.open) d.close(); resolve(v); }
+      $('cfTitulo').textContent = titulo;
+      var box = limpar($('cfTexto'));
+      linhas.forEach(function (l) { box.appendChild(el('p', { text: l })); });
+      $('cfSim').textContent = rotulo || 'Confirmar';
+      $('cfSim').onclick = function () { fim(true); };
+      $('cfNao').onclick = function () { fim(false); };
+      d.addEventListener('close', function () { fim(false); }, { once: true });
+      d.showModal();
+    });
+  }
+
+  /* ---------- carga de dados ---------- */
+  function indexar() {
+    E.mu = {}; E.mc = {}; E.mk = {};
+    E.init.usuarios.forEach(function (u) { E.mu[u.id] = u; });
+    E.init.cuidadoras.forEach(function (c) { E.mc[c.id] = c; });
+    E.init.cores.forEach(function (c) { E.mk[c.id] = c; });
+  }
+
+  function carregarTudo() {
+    return api('carregarInicial').then(function (i) {
+      E.init = i; indexar();
+      if (!E.semana) E.semana = inicioSemana(i.hoje);
+      return api('carregarEscala', E.semana);
+    }).then(function (e) {
+      E.escala = e; E.semana = e.semanaInicio;
+      renderTudo();
+    });
+  }
+
+  function carregarSomenteEscala() {
+    return api('carregarEscala', E.semana).then(function (e) {
+      E.escala = e; E.semana = e.semanaInicio;
+      renderEscala();
+    });
+  }
+
+  function renderTudo() {
+    renderLegenda(); renderEscala(); renderUsuarios(); renderCuidadoras(); renderBloqueios(); renderConfig();
+  }
+
+  /* ---------- helpers de apresentação ---------- */
+  function nomeCuidadoras(ids) {
+    return ids.map(function (id) { return E.mc[id] ? E.mc[id].nome : id; }).join(' + ');
+  }
+  function necessidades(u) {
+    var t = [];
+    if (u.precisaBanho === 'sim') t.push({ i: '🛁', n: 'banho' });
+    if (u.precisaAlimentacao === 'sim') t.push({ i: '🍽️', n: 'alimentação' });
+    if (u.precisaLevantar === 'sim') t.push({ i: '🧍', n: 'levantar' });
+    if (u.dispositivo) t.push({ i: '♿', n: u.dispositivo });
+    return t;
+  }
+  function corDe(u) { return E.mk[u.corId] || { nome: '', hex: '#888888', significado: '' }; }
+
+  function renderLegenda() {
+    var box = limpar($('legenda'));
+    E.init.cores.forEach(function (c) {
+      box.appendChild(el('span', { class: 'item', title: c.significado },
+        el('span', { class: 'ponto', style: '--cor:' + c.hex, 'aria-hidden': 'true' }), c.nome + (c.significado ? ' – ' + c.significado : '')));
+    });
+    box.appendChild(el('span', { class: 'item', text: '🛁 banho  🍽️ comer  🧍 levantar  ♿ dispositivo' }));
+  }
+
+  /* ---------- ESCALA ---------- */
+  function bloqueiosDoSlot(data, periodo) {
+    return E.escala.bloqueios.filter(function (b) {
+      return data >= b.dataInicio && data <= b.dataFim && (b.periodo === 'ambos' || b.periodo === periodo);
+    });
+  }
+
+  function cartao(a) {
+    var u = E.mu[a.usuarioId] || { nome: a.usuarioId };
+    var cor = corDe(u);
+    var nomes = nomeCuidadoras(a.cuidadorasIds);
+    var faltam = a.cuidadorasIds.length < E.init.parametros.tamanhoDupla;
+    var nec = necessidades(u);
+    var rotulo = u.nome + ', gravidade ' + cor.nome + ', cuidadoras: ' + (nomes || 'nenhuma') +
+      (a.alertas.length ? '. Alertas: ' + a.alertas.join(' ') : '') + '. Abrir para editar.';
+    return el('button', {
+      type: 'button', class: 'card' + (a.alertas.length ? ' alerta' : ''), style: '--cor:' + cor.hex,
+      'aria-label': rotulo, title: a.alertas.join('\n'), onclick: function () { abrirAtendimento(a); }
+    },
+      el('span', { class: 'l1' }, el('strong', { text: (a.alertas.length ? '⚠ ' : '') + u.nome })),
+      el('span', { class: 'l2' + (faltam ? ' falta' : ''), text: faltam ? ('Falta cuidadora' + (nomes ? ' (' + nomes + ')' : '')) : nomes }),
+      el('span', { class: 'l3' },
+        el('span', { title: nec.map(function (x) { return x.n; }).join(', '), text: nec.map(function (x) { return x.i; }).join(' ') }),
+        el('span', { class: 'cornome', text: cor.nome }))
+    );
+  }
+
+  function celulaSlot(dia, periodo, rowspan) {
+    var td = el('td', { class: 'slot' + (dia.atende ? '' : ' folga') + (dia.data === E.init.hoje ? ' hoje' : ''), rowspan: rowspan });
+    bloqueiosDoSlot(dia.data, periodo).forEach(function (b) {
+      if (b.cuidadoraId === 'todas') td.appendChild(el('div', { class: 'bloq todas', text: '⛔ ' + b.motivo + ' (toda a equipe)' }));
+      else td.appendChild(el('div', { class: 'bloq', text: '🚫 ' + (E.mc[b.cuidadoraId] ? E.mc[b.cuidadoraId].nome : '?') + ': ' + b.motivo }));
+    });
+    E.escala.atendimentos.filter(function (a) { return a.data === dia.data && a.periodo === periodo; })
+      .forEach(function (a) { td.appendChild(cartao(a)); });
+    td.appendChild(el('button', {
+      type: 'button', class: 'mais', text: '+', 'aria-label': 'Adicionar atendimento em ' + DIAS[dia.dow] + ' ' + dm(dia.data) + ', ' + (periodo === 'manha' ? 'manhã' : 'tarde'),
+      onclick: function () { abrirAtendimento(null, { data: dia.data, periodo: periodo }); }
+    }));
+    return td;
+  }
+
+  function renderGrade(box) {
+    var dias = E.escala.dias;
+    var tab = el('table', { class: 'grade' });
+    tab.appendChild(el('caption', { class: 'sr-only', text: 'Escala semanal de domingo a sábado, das 8h às 18h' }));
+    var trh = el('tr', null, el('th', { scope: 'col', class: 'hora', text: 'Hora' }));
+    dias.forEach(function (d) {
+      trh.appendChild(el('th', { scope: 'col', class: (d.atende ? '' : 'folga') + (d.data === E.init.hoje ? ' hoje' : '') },
+        DIAS[d.dow], el('small', { text: dmy(d.data) })));
+    });
+    tab.appendChild(el('thead', null, trh));
+    var tb = el('tbody');
+    for (var h = 8; h < 18; h++) {
+      var tr = el('tr', null, el('th', { scope: 'row', class: 'hora', text: pad(h) + ':00' }));
+      if (h === 8) dias.forEach(function (d) { tr.appendChild(celulaSlot(d, 'manha', 4)); });
+      else if (h === 12) tr.appendChild(el('td', { class: 'intervalo', colspan: 7, text: 'Intervalo' }));
+      else if (h === 13) dias.forEach(function (d) { tr.appendChild(celulaSlot(d, 'tarde', 5)); });
+      tb.appendChild(tr);
+    }
+    tab.appendChild(tb);
+    box.appendChild(tab);
+  }
+
+  function renderPorCuidadora(box) {
+    var dias = E.escala.dias;
+    var tab = el('table', { class: 'lista' });
+    tab.appendChild(el('caption', { class: 'sr-only', text: 'Escala semanal por cuidadora' }));
+    var r1 = el('tr', null, el('th', { rowspan: 2, scope: 'col', text: 'Cuidadora' }));
+    var r2 = el('tr');
+    dias.forEach(function (d) {
+      r1.appendChild(el('th', { colspan: 2, scope: 'colgroup', class: (d.atende ? '' : 'folga') + (d.data === E.init.hoje ? ' hoje' : '') }, DIAS[d.dow] + ' ' + dm(d.data)));
+      r2.appendChild(el('th', { scope: 'col', text: 'Manhã' }));
+      r2.appendChild(el('th', { scope: 'col', text: 'Tarde' }));
+    });
+    r1.appendChild(el('th', { rowspan: 2, scope: 'col', text: 'Visitas' }));
+    tab.appendChild(el('thead', null, r1, r2));
+    var tb = el('tbody');
+    E.init.cuidadoras.filter(function (c) { return c.ativo === 'sim'; }).forEach(function (c) {
+      var tr = el('tr', null, el('th', { scope: 'row', text: c.nome }));
+      var total = 0;
+      dias.forEach(function (d) {
+        ['manha', 'tarde'].forEach(function (p) {
+          var a = E.escala.atendimentos.filter(function (x) { return x.data === d.data && x.periodo === p && x.cuidadorasIds.indexOf(c.id) >= 0; })[0];
+          var b = bloqueiosDoSlot(d.data, p).filter(function (x) { return x.cuidadoraId === 'todas' || x.cuidadoraId === c.id; })[0];
+          var td = el('td', { class: d.atende ? '' : 'folga' });
+          if (a) {
+            total++;
+            var u = E.mu[a.usuarioId] || { nome: a.usuarioId, corId: '' };
+            td.appendChild(el('button', { type: 'button', class: 'card', style: '--cor:' + corDe(u).hex, onclick: function () { abrirAtendimento(a); } },
+              el('span', { class: 'l1' }, el('strong', { text: u.nome }))));
+          } else if (b) {
+            td.appendChild(el('div', { class: 'bloq', text: b.motivo }));
+          } else {
+            td.appendChild(el('span', { class: 'contador', text: '—', 'aria-label': 'livre' }));
+          }
+          tr.appendChild(td);
+        });
+      });
+      tr.appendChild(el('td', { text: String(total) }));
+      tb.appendChild(tr);
+    });
+    tab.appendChild(tb);
+    box.appendChild(tab);
+  }
+
+  function renderEscala() {
+    var e = E.escala;
+    $('tituloSemana').textContent = dmy(e.semanaInicio) + ' a ' + dmy(somar(e.semanaInicio, 6));
+    var av = limpar($('avisosEscala'));
+    if (e.pendencias.length) {
+      var lista = e.pendencias.map(function (p) {
+        var u = E.mu[p.usuarioId];
+        return (u ? u.nome : p.usuarioId) + ' (' + p.faltam + ')';
+      }).join(', ');
+      av.appendChild(el('div', { class: 'aviso' }, el('strong', { text: e.pendencias.length + ' usuário(s) com visitas pendentes. ' }),
+        'Clique em "Atualizar escala" para distribuir. ', el('span', { class: 'ajuda', text: lista })));
+    }
+    var comAlerta = e.atendimentos.filter(function (a) { return a.alertas.length; }).length;
+    if (comAlerta) av.appendChild(el('div', { class: 'aviso', text: '⚠ ' + comAlerta + ' atendimento(s) com alerta (passe o mouse ou abra o cartão para ver o motivo).' }));
+    if (E.avisosGeracao.length) {
+      var ul2 = el('ul');
+      E.avisosGeracao.forEach(function (t) { ul2.appendChild(el('li', { text: t })); });
+      av.appendChild(el('div', { class: 'aviso' }, el('strong', { text: 'Avisos da última distribuição:' }), ul2));
+    }
+    var box = limpar($('conteudoEscala'));
+    if (E.visao === 'grade') renderGrade(box); else renderPorCuidadora(box);
+  }
+
+  /* ---------- USUÁRIOS ---------- */
+  function renderUsuarios() {
+    var ver = $('verInativosU').checked;
+    var ativos = E.init.usuarios.filter(function (u) { return u.ativo === 'sim'; }).length;
+    $('contadorUsuarios').textContent = ativos + ' de ' + E.init.parametros.maxUsuarios + ' usuários ativos';
+    var tab = el('table', { class: 'lista' });
+    tab.appendChild(el('thead', null, el('tr', null,
+      ['Nome', 'Gravidade', 'Precisa de', 'Frequência', 'Período', 'Ações'].map(function (t) { return el('th', { scope: 'col', text: t }); }))));
+    var tb = el('tbody');
+    E.init.usuarios.filter(function (u) { return ver || u.ativo === 'sim'; }).forEach(function (u) {
+      var cor = corDe(u);
+      var fr = E.init.frequencias.filter(function (f) { return f.id === u.frequencia; })[0];
+      tb.appendChild(el('tr', { class: u.ativo === 'sim' ? '' : 'inativo' },
+        el('td', null, el('strong', { text: u.nome }), u.ativo === 'sim' ? '' : ' (inativo)', u.endereco ? el('div', { class: 'ajuda', text: u.endereco }) : null),
+        el('td', null, el('span', { class: 'ponto', style: '--cor:' + cor.hex, 'aria-hidden': 'true' }), ' ' + cor.nome),
+        el('td', null, necessidades(u).map(function (x) { return el('span', { class: 'chip', text: x.i + ' ' + x.n }); })),
+        el('td', { text: fr ? fr.nome : u.frequencia }),
+        el('td', { text: u.periodoPreferido === 'manha' ? 'Manhã' : u.periodoPreferido === 'tarde' ? 'Tarde' : 'Tanto faz' }),
+        el('td', { class: 'acoes' }, el('button', { type: 'button', class: 'btn sec mini', text: 'Editar', onclick: function () { abrirUsuario(u); } }))));
+    });
+    tab.appendChild(tb);
+    limpar($('listaUsuarios')).appendChild(tab);
+  }
+
+  /* ---------- CUIDADORAS ---------- */
+  function renderCuidadoras() {
+    var ver = $('verInativosC').checked;
+    var tab = el('table', { class: 'lista' });
+    tab.appendChild(el('thead', null, el('tr', null,
+      ['Nome', 'Restrições', 'Cores que atende', 'Ações'].map(function (t) { return el('th', { scope: 'col', text: t }); }))));
+    var tb = el('tbody');
+    E.init.cuidadoras.filter(function (c) { return ver || c.ativo === 'sim'; }).forEach(function (c) {
+      var permitidas = c.coresPermitidas ? c.coresPermitidas.split(',') : null;
+      tb.appendChild(el('tr', { class: c.ativo === 'sim' ? '' : 'inativo' },
+        el('td', null, el('strong', { text: c.nome }), c.ativo === 'sim' ? '' : ' (inativa)'),
+        el('td', null,
+          c.restricaoPeso === 'sim' ? el('span', { class: 'chip', text: 'Não pega peso' }) : null,
+          c.restricaoBanho === 'sim' ? el('span', { class: 'chip', text: 'Não faz banho' }) : null,
+          (c.restricaoPeso !== 'sim' && c.restricaoBanho !== 'sim') ? 'Nenhuma' : null),
+        el('td', null, E.init.cores.filter(function (k) { return !permitidas || permitidas.indexOf(k.id) >= 0; }).map(function (k) {
+          return el('span', { class: 'chip' }, el('span', { class: 'ponto', style: '--cor:' + k.hex, 'aria-hidden': 'true' }), ' ' + k.nome);
+        })),
+        el('td', { class: 'acoes' }, el('button', { type: 'button', class: 'btn sec mini', text: 'Editar', onclick: function () { abrirCuidadora(c); } }))));
+    });
+    tab.appendChild(tb);
+    limpar($('listaCuidadoras')).appendChild(tab);
+  }
+
+  /* ---------- AUSÊNCIAS ---------- */
+  function renderBloqueios() {
+    var tab = el('table', { class: 'lista' });
+    tab.appendChild(el('thead', null, el('tr', null,
+      ['Quem', 'De', 'Até', 'Período', 'Motivo', 'Ações'].map(function (t) { return el('th', { scope: 'col', text: t }); }))));
+    var tb = el('tbody');
+    if (!E.init.bloqueios.length) tb.appendChild(el('tr', null, el('td', { colspan: 6, text: 'Nenhuma ausência ou reunião registrada.' })));
+    E.init.bloqueios.forEach(function (b) {
+      tb.appendChild(el('tr', null,
+        el('td', { text: b.cuidadoraId === 'todas' ? 'Toda a equipe' : (E.mc[b.cuidadoraId] ? E.mc[b.cuidadoraId].nome : b.cuidadoraId) }),
+        el('td', { text: dmy(b.dataInicio) }), el('td', { text: dmy(b.dataFim) }),
+        el('td', { text: b.periodo === 'ambos' ? 'Dia todo' : b.periodo === 'manha' ? 'Manhã' : 'Tarde' }),
+        el('td', { text: b.motivo }),
+        el('td', { class: 'acoes' }, el('button', { type: 'button', class: 'btn perigo mini', text: 'Remover', onclick: function () {
+          confirmar('Remover bloqueio', ['O horário volta a ficar livre. Depois use "Atualizar escala" para redistribuir.'], 'Remover').then(function (sim) {
+            if (!sim) return;
+            executar(function () { return api('removerBloqueio', b.id); }).then(function (r) {
+              if (r) { avisar(r.mensagem); return carregarTudo(); }
+            });
+          });
+        } }))));
+    });
+    tab.appendChild(tb);
+    limpar($('listaBloqueios')).appendChild(tab);
+  }
+
+  /* ---------- CONFIGURAÇÕES ---------- */
+  function linhaCor(c) {
+    var linha = el('div', { class: 'cor-edit', 'data-id': c.id || '' },
+      el('input', { type: 'text', value: c.nome, maxlength: 20, 'aria-label': 'Nome da cor', 'data-campo': 'nome' }),
+      el('input', { type: 'color', value: c.hex, 'aria-label': 'Cor', 'data-campo': 'hex' }),
+      el('input', { type: 'text', value: c.significado || '', maxlength: 200, 'aria-label': 'O que esta cor significa', placeholder: 'O que significa', 'data-campo': 'significado' }));
+    linha.querySelector('[data-campo="nome"]').value = c.nome;
+    linha.querySelector('[data-campo="hex"]').value = c.hex;
+    linha.querySelector('[data-campo="significado"]').value = c.significado || '';
+    return linha;
+  }
+
+  function renderConfig() {
+    var p = E.init.parametros;
+    $('cfMaxUsuarios').value = p.maxUsuarios;
+    $('cfDupla').value = p.tamanhoDupla;
+    $('cfTurno').value = p.cuidadorasPorTurno;
+    $('cfDia').value = p.familiasPorDia;
+    var dias = limpar($('cfDias'));
+    ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].forEach(function (nome, i) {
+      var cb = el('input', { type: 'checkbox', 'data-dia': i });
+      cb.checked = p.diasAtendimento.indexOf(i) >= 0;
+      dias.appendChild(el('label', { class: 'marca' }, cb, ' ' + nome));
+    });
+    var cores = limpar($('cfCores'));
+    E.init.cores.forEach(function (c) { cores.appendChild(linhaCor(c)); });
+    $('cfDisp').value = p.dispositivos.join('\n');
+  }
+
+  function salvarConfig(ev) {
+    ev.preventDefault();
+    var dias = Array.prototype.filter.call($('cfDias').querySelectorAll('input'), function (i) { return i.checked; })
+      .map(function (i) { return +i.getAttribute('data-dia'); });
+    var cores = Array.prototype.map.call($('cfCores').querySelectorAll('.cor-edit'), function (l) {
+      return {
+        id: l.getAttribute('data-id') || '',
+        nome: l.querySelector('[data-campo="nome"]').value,
+        hex: l.querySelector('[data-campo="hex"]').value,
+        significado: l.querySelector('[data-campo="significado"]').value
+      };
+    });
+    var dados = {
+      maxUsuarios: $('cfMaxUsuarios').value, tamanhoDupla: $('cfDupla').value, cuidadorasPorTurno: $('cfTurno').value,
+      familiasPorDia: $('cfDia').value, diasAtendimento: dias, cores: cores,
+      dispositivos: $('cfDisp').value.split('\n')
+    };
+    executar(function () { return api('salvarConfiguracao', dados); }, 'Salvando...').then(function (r) {
+      if (r) { avisar(r.mensagem); return carregarTudo(); }
+    });
+  }
+
+  /* ---------- DIÁLOGOS ---------- */
+  function fecharDialogo(d) { if (d.open) d.close(); }
+  function mostrarErro(id, e) { $(id).textContent = textoErro(e); }
+
+  function opcoes(sel, lista, valor) {
+    limpar(sel);
+    lista.forEach(function (o) { sel.appendChild(el('option', { value: o.v, text: o.t })); });
+    sel.value = valor === undefined ? (lista[0] ? lista[0].v : '') : valor;
+  }
+
+  /* Atendimento */
+  function abrirAtendimento(a, predef) {
+    var novo = !a;
+    var p = E.init.parametros;
+    $('atTitulo').textContent = novo ? 'Novo atendimento (manual)' : 'Atendimento';
+    $('atErro').textContent = '';
+    E.edicao = a ? a.id : '';
+    var usuarios = E.init.usuarios.filter(function (u) { return u.ativo === 'sim' || (a && u.id === a.usuarioId); })
+      .map(function (u) { return { v: u.id, t: u.nome }; });
+    opcoes($('atUsuario'), novo ? [{ v: '', t: '— escolher —' }].concat(usuarios) : usuarios, a ? a.usuarioId : '');
+    $('atUsuario').disabled = !novo;
+    $('atData').value = a ? a.data : (predef ? predef.data : E.init.hoje);
+    opcoes($('atPeriodo'), E.init.periodos.map(function (x) { return { v: x.id, t: x.nome + ' (' + x.inicio + 'h–' + x.fim + 'h)' }; }),
+      a ? a.periodo : (predef ? predef.periodo : 'manha'));
+    var box = limpar($('atCuidadoras'));
+    var ativas = E.init.cuidadoras.filter(function (c) { return c.ativo === 'sim'; });
+    for (var i = 0; i < p.tamanhoDupla; i++) {
+      var sel = el('select', { 'aria-label': 'Cuidadora ' + (i + 1), 'data-cuid': i });
+      opcoes(sel, [{ v: '', t: '— escolher —' }].concat(ativas.map(function (c) { return { v: c.id, t: c.nome }; })),
+        a && a.cuidadorasIds[i] && E.mc[a.cuidadorasIds[i]] && E.mc[a.cuidadorasIds[i]].ativo === 'sim' ? a.cuidadorasIds[i] : '');
+      box.appendChild(el('div', { class: 'campo' }, el('label', { text: 'Cuidadora ' + (i + 1) }), sel));
+    }
+    var al = $('atAlertas');
+    limpar(al);
+    al.hidden = !(a && a.alertas.length);
+    if (a) a.alertas.forEach(function (t) { al.appendChild(el('div', { text: '⚠ ' + t })); });
+    $('atRetirar').hidden = novo;
+    $('dlgAtend').showModal();
+  }
+
+  function dadosAtendimento() {
+    var ids = Array.prototype.map.call($('atCuidadoras').querySelectorAll('select'), function (s) { return s.value; })
+      .filter(function (v) { return v; });
+    return { id: E.edicao, usuarioId: $('atUsuario').value, data: $('atData').value, periodo: $('atPeriodo').value, cuidadorasIds: ids };
+  }
+
+  function enviarAtendimento(forcar) {
+    var dados = dadosAtendimento();
+    return executar(function () { return api('salvarAtendimento', dados, !!forcar); }, 'Salvando...', 'atErro').then(function (r) {
+      if (!r) return;
+      if (!r.ok && r.confirmar) {
+        return confirmar('Confirmar mesmo assim?', r.avisos, 'Salvar mesmo assim').then(function (sim) {
+          if (sim) return enviarAtendimento(true);
+        });
+      }
+      fecharDialogo($('dlgAtend'));
+      avisar(r.mensagem);
+      return carregarTudo();
+    });
+  }
+
+  /* Usuário */
+  function abrirUsuario(u) {
+    var novo = !u;
+    u = u || { id: '', nome: '', endereco: '', corId: E.init.cores[0].id, precisaBanho: 'nao', precisaAlimentacao: 'nao', precisaLevantar: 'nao',
+      dispositivo: '', observacoes: '', frequencia: 's1', periodoPreferido: 'manha', ativo: 'sim' };
+    E.edicao = u.id;
+    $('uTitulo').textContent = novo ? 'Novo usuário' : 'Editar usuário';
+    $('uErro').textContent = '';
+    $('uNome').value = u.nome; $('uEndereco').value = u.endereco;
+    var cores = limpar($('uCores'));
+    E.init.cores.forEach(function (c) {
+      var r = el('input', { type: 'radio', name: 'uCor', value: c.id });
+      r.checked = c.id === u.corId;
+      cores.appendChild(el('label', { class: 'marca' }, r,
+        el('span', { class: 'ponto', style: '--cor:' + c.hex, 'aria-hidden': 'true' }),
+        el('span', null, el('strong', { text: c.nome }), c.significado ? ' – ' + c.significado : '')));
+    });
+    $('uBanho').checked = u.precisaBanho === 'sim';
+    $('uComer').checked = u.precisaAlimentacao === 'sim';
+    $('uLevantar').checked = u.precisaLevantar === 'sim';
+    var disp = E.init.parametros.dispositivos.slice();
+    if (u.dispositivo && disp.indexOf(u.dispositivo) < 0) disp.push(u.dispositivo);
+    opcoes($('uDisp'), [{ v: '', t: 'Nenhum' }].concat(disp.map(function (d) { return { v: d, t: d }; })), u.dispositivo || '');
+    opcoes($('uFreq'), E.init.frequencias.map(function (f) { return { v: f.id, t: f.nome }; }), u.frequencia);
+    $('uPeriodo').value = u.periodoPreferido;
+    $('uObs').value = u.observacoes;
+    $('uAtivo').checked = u.ativo === 'sim';
+    $('uAtivoLinha').hidden = novo;
+    $('dlgUsuario').showModal();
+  }
+
+  function salvarUsuario(ev) {
+    ev.preventDefault();
+    var cor = document.querySelector('input[name="uCor"]:checked');
+    var dados = {
+      id: E.edicao, nome: $('uNome').value, endereco: $('uEndereco').value, corId: cor ? cor.value : '',
+      precisaBanho: $('uBanho').checked, precisaAlimentacao: $('uComer').checked, precisaLevantar: $('uLevantar').checked,
+      dispositivo: $('uDisp').value, frequencia: $('uFreq').value, periodoPreferido: $('uPeriodo').value,
+      observacoes: $('uObs').value, ativo: $('uAtivoLinha').hidden ? true : $('uAtivo').checked
+    };
+    $('uErro').textContent = '';
+    executar(function () { return api('salvarUsuario', dados); }, 'Salvando...', 'uErro').then(function (r) {
+      if (r) { fecharDialogo($('dlgUsuario')); avisar(r.mensagem); return carregarTudo(); }
+    });
+  }
+
+  /* Cuidadora */
+  function abrirCuidadora(c) {
+    var novo = !c;
+    c = c || { id: '', nome: '', restricaoPeso: 'nao', restricaoBanho: 'nao', coresPermitidas: '', observacoes: '', ativo: 'sim' };
+    E.edicao = c.id;
+    $('cTitulo').textContent = novo ? 'Nova cuidadora' : 'Editar cuidadora';
+    $('cErro').textContent = '';
+    $('cNome').value = c.nome;
+    $('cPeso').checked = c.restricaoPeso === 'sim';
+    $('cBanho').checked = c.restricaoBanho === 'sim';
+    var permitidas = c.coresPermitidas ? c.coresPermitidas.split(',') : null;
+    var box = limpar($('cCores'));
+    E.init.cores.forEach(function (k) {
+      var cb = el('input', { type: 'checkbox', value: k.id });
+      cb.checked = !permitidas || permitidas.indexOf(k.id) >= 0;
+      box.appendChild(el('label', { class: 'marca' }, cb, el('span', { class: 'ponto', style: '--cor:' + k.hex, 'aria-hidden': 'true' }),
+        el('span', null, el('strong', { text: k.nome }), k.significado ? ' – ' + k.significado : '')));
+    });
+    $('cObs').value = c.observacoes;
+    $('cAtivo').checked = c.ativo === 'sim';
+    $('cAtivoLinha').hidden = novo;
+    $('dlgCuidadora').showModal();
+  }
+
+  function salvarCuidadora(ev) {
+    ev.preventDefault();
+    var cores = Array.prototype.filter.call($('cCores').querySelectorAll('input'), function (i) { return i.checked; })
+      .map(function (i) { return i.value; });
+    var dados = {
+      id: E.edicao, nome: $('cNome').value, restricaoPeso: $('cPeso').checked, restricaoBanho: $('cBanho').checked,
+      coresPermitidas: cores.join(','), observacoes: $('cObs').value, ativo: $('cAtivoLinha').hidden ? true : $('cAtivo').checked
+    };
+    if (!cores.length) { $('cErro').textContent = 'Marque pelo menos uma cor de gravidade.'; return; }
+    $('cErro').textContent = '';
+    executar(function () { return api('salvarCuidadora', dados); }, 'Salvando...', 'cErro').then(function (r) {
+      if (r) { fecharDialogo($('dlgCuidadora')); avisar(r.mensagem); return carregarTudo(); }
+    });
+  }
+
+  /* Ausência ou reunião */
+  function abrirBloqueio() {
+    $('bErro').textContent = '';
+    opcoes($('bQuem'), [{ v: 'todas', t: 'Toda a equipe (reunião)' }].concat(
+      E.init.cuidadoras.filter(function (c) { return c.ativo === 'sim'; }).map(function (c) { return { v: c.id, t: c.nome }; })), 'todas');
+    $('bIni').value = E.init.hoje; $('bFim').value = E.init.hoje;
+    $('bPeriodo').value = 'ambos'; $('bMotivo').value = '';
+    $('dlgBloqueio').showModal();
+  }
+
+  function salvarBloqueio(ev) {
+    ev.preventDefault();
+    var dados = { cuidadoraId: $('bQuem').value, dataInicio: $('bIni').value, dataFim: $('bFim').value, periodo: $('bPeriodo').value, motivo: $('bMotivo').value };
+    $('bErro').textContent = '';
+    executar(function () { return api('registrarBloqueio', dados); }, 'Registrando e reorganizando a escala...', 'bErro').then(function (r) {
+      if (!r) return;
+      fecharDialogo($('dlgBloqueio'));
+      E.avisosGeracao = r.avisos || [];
+      avisar(r.mensagem);
+      return carregarTudo();
+    });
+  }
+
+  /* ---------- AÇÕES DA ESCALA ---------- */
+  function gerar(modo) {
+    executar(function () { return api('gerarEscala', E.semana, modo); }, 'Distribuindo atendimentos...').then(function (r) {
+      if (!r) return;
+      E.avisosGeracao = r.avisos || [];
+      avisar(r.mensagem);
+      return carregarTudo();
+    });
+  }
+
+  function trocarAba(nome) {
+    E.aba = nome;
+    Array.prototype.forEach.call(document.querySelectorAll('[role="tab"]'), function (b) {
+      var sel = b.getAttribute('data-aba') === nome;
+      b.setAttribute('aria-selected', sel ? 'true' : 'false');
+      b.tabIndex = sel ? 0 : -1;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[role="tabpanel"]'), function (p) { p.hidden = p.id !== 'painel-' + nome; });
+  }
+
+  function mudarSemana(iso) {
+    E.semana = iso;
+    E.avisosGeracao = [];
+    executar(function () { return carregarSomenteEscala(); }, '');
+  }
+
+  function definirVisao(v) {
+    E.visao = v;
+    $('visGrade').setAttribute('aria-pressed', v === 'grade' ? 'true' : 'false');
+    $('visCuid').setAttribute('aria-pressed', v === 'cuid' ? 'true' : 'false');
+    if (E.escala) renderEscala();
+  }
+
+  /* ---------- INICIALIZAÇÃO ---------- */
+  function ligar() {
+    Array.prototype.forEach.call(document.querySelectorAll('[role="tab"]'), function (b, i, todas) {
+      b.addEventListener('click', function () { trocarAba(b.getAttribute('data-aba')); });
+      b.addEventListener('keydown', function (ev) {
+        var d = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        var alvo = todas[(i + d + todas.length) % todas.length];
+        trocarAba(alvo.getAttribute('data-aba'));
+        alvo.focus();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-fechar]'), function (b) {
+      b.addEventListener('click', function () { fecharDialogo(b.closest('dialog')); });
+    });
+    $('semAnt').addEventListener('click', function () { mudarSemana(somar(E.semana, -7)); });
+    $('semProx').addEventListener('click', function () { mudarSemana(somar(E.semana, 7)); });
+    $('semHoje').addEventListener('click', function () { mudarSemana(inicioSemana(E.init.hoje)); });
+    $('visGrade').addEventListener('click', function () { definirVisao('grade'); });
+    $('visCuid').addEventListener('click', function () { definirVisao('cuid'); });
+    $('btnAtualizar').addEventListener('click', function () { gerar('completar'); });
+    $('btnRefazer').addEventListener('click', function () {
+      confirmar('Refazer a semana', [
+        'Os atendimentos automáticos de hoje em diante serão recalculados do zero.',
+        'Atendimentos que você mudou manualmente e dias que já passaram não são alterados.'
+      ], 'Refazer').then(function (sim) { if (sim) gerar('refazer'); });
+    });
+    $('btnNovoAtend').addEventListener('click', function () { abrirAtendimento(null, null); });
+    $('btnAusenciaRapida').addEventListener('click', abrirBloqueio);
+    $('btnNovoBloqueio').addEventListener('click', abrirBloqueio);
+    $('btnNovoUsuario').addEventListener('click', function () { abrirUsuario(null); });
+    $('btnNovaCuidadora').addEventListener('click', function () { abrirCuidadora(null); });
+    $('verInativosU').addEventListener('change', renderUsuarios);
+    $('verInativosC').addEventListener('change', renderCuidadoras);
+    $('btnAddCor').addEventListener('click', function () {
+      var box = $('cfCores');
+      if (box.querySelectorAll('.cor-edit').length >= 6) { avisar('O máximo é 6 cores.', true); return; }
+      var nova = linhaCor({ id: '', nome: '', hex: '#6a1b9a', significado: '' });
+      box.appendChild(nova);
+      nova.querySelector('input').focus();
+    });
+    $('formConfig').addEventListener('submit', salvarConfig);
+    $('formUsuario').addEventListener('submit', salvarUsuario);
+    $('formCuidadora').addEventListener('submit', salvarCuidadora);
+    $('formBloqueio').addEventListener('submit', salvarBloqueio);
+    $('formAtend').addEventListener('submit', function (ev) { ev.preventDefault(); $('atErro').textContent = ''; enviarAtendimento(false); });
+    $('atRetirar').addEventListener('click', function () {
+      confirmar('Retirar da escala', ['O atendimento sai da escala (fica no histórico como cancelado).'], 'Retirar').then(function (sim) {
+        if (!sim) return;
+        var id = E.edicao;
+        executar(function () { return api('retirarAtendimento', id); }, 'Retirando...', 'atErro').then(function (r) {
+          if (r) { fecharDialogo($('dlgAtend')); avisar(r.mensagem); return carregarTudo(); }
+        });
+      });
+    });
+    $('msg').addEventListener('click', function (ev) { if (ev.target === $('msg') && $('msg').className !== 'erro') $('msg').textContent = ''; });
+  }
+
+  ligar();
+  executar(function () { return carregarTudo(); }, 'Carregando...').then(function () { if (!E.ocupado && E.init) avisar(''); });
+})();
+</script>

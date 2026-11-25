@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Escala de Atendimento</title>
+  <?!= include('Estilos'); ?>
+</head>
+<body>
+  <a class="pular" href="#principal">Ir para o conteúdo</a>
+
+  <header class="topo">
+    <h1>Escala de Atendimento</h1>
+    <div class="abas" role="tablist" aria-label="Seções do sistema">
+      <button type="button" role="tab" id="aba-escala" data-aba="escala" aria-selected="true" aria-controls="painel-escala">Escala</button>
+      <button type="button" role="tab" id="aba-usuarios" data-aba="usuarios" aria-selected="false" aria-controls="painel-usuarios" tabindex="-1">Usuários</button>
+      <button type="button" role="tab" id="aba-cuidadoras" data-aba="cuidadoras" aria-selected="false" aria-controls="painel-cuidadoras" tabindex="-1">Cuidadoras</button>
+      <button type="button" role="tab" id="aba-ausencias" data-aba="ausencias" aria-selected="false" aria-controls="painel-ausencias" tabindex="-1">Ausências e reuniões</button>
+      <button type="button" role="tab" id="aba-config" data-aba="config" aria-selected="false" aria-controls="painel-config" tabindex="-1">Configurações</button>
+    </div>
+  </header>
+
+  <main id="principal">
+    <section id="painel-escala" role="tabpanel" aria-labelledby="aba-escala">
+      <div class="barra">
+        <button type="button" class="btn sec" id="semAnt" aria-label="Semana anterior">◀</button>
+        <div class="titulo-semana" id="tituloSemana" aria-live="polite"></div>
+        <button type="button" class="btn sec" id="semProx" aria-label="Próxima semana">▶</button>
+        <button type="button" class="btn sec" id="semHoje">Hoje</button>
+        <span class="espaco"></span>
+        <div class="seg" role="group" aria-label="Forma de ver a escala">
+          <button type="button" id="visGrade" aria-pressed="true">Por horário</button>
+          <button type="button" id="visCuid" aria-pressed="false">Por cuidadora</button>
+        </div>
+      </div>
+      <div class="barra">
+        <button type="button" class="btn" id="btnAtualizar">Atualizar escala</button>
+        <button type="button" class="btn sec" id="btnRefazer">Refazer semana</button>
+        <button type="button" class="btn sec" id="btnNovoAtend">+ Atendimento manual</button>
+        <button type="button" class="btn sec" id="btnAusenciaRapida">Registrar ausência ou reunião</button>
+      </div>
+      <div id="avisosEscala"></div>
+      <div class="legenda" id="legenda"></div>
+      <div class="rolagem" id="conteudoEscala"></div>
+    </section>
+
+    <section id="painel-usuarios" role="tabpanel" aria-labelledby="aba-usuarios" hidden>
+      <div class="barra">
+        <button type="button" class="btn" id="btnNovoUsuario">+ Novo usuário</button>
+        <label class="marca"><input type="checkbox" id="verInativosU"> Mostrar inativos</label>
+        <span class="espaco"></span>
+        <span class="contador" id="contadorUsuarios"></span>
+      </div>
+      <div class="rolagem" id="listaUsuarios"></div>
+    </section>
+
+    <section id="painel-cuidadoras" role="tabpanel" aria-labelledby="aba-cuidadoras" hidden>
+      <div class="barra">
+        <button type="button" class="btn" id="btnNovaCuidadora">+ Nova cuidadora</button>
+        <label class="marca"><input type="checkbox" id="verInativosC"> Mostrar inativas</label>
+      </div>
+      <div class="rolagem" id="listaCuidadoras"></div>
+    </section>
+
+    <section id="painel-ausencias" role="tabpanel" aria-labelledby="aba-ausencias" hidden>
+      <div class="barra">
+        <button type="button" class="btn" id="btnNovoBloqueio">+ Registrar ausência ou reunião</button>
+      </div>
+      <p class="ajuda">Ausência de uma cuidadora: o sistema passa os atendimentos dela para outra automaticamente. Reunião da equipe toda: o horário fica ocupado e os atendimentos são reagendados.</p>
+      <div class="rolagem" id="listaBloqueios"></div>
+    </section>
+
+    <section id="painel-config" role="tabpanel" aria-labelledby="aba-config" hidden>
+      <form id="formConfig" novalidate>
+        <div class="config-grade">
+          <div class="cartao">
+            <h2>Capacidade</h2>
+            <div class="campo"><label for="cfMaxUsuarios">Máximo de usuários ativos</label><input type="number" id="cfMaxUsuarios" min="1" max="200"></div>
+            <div class="campo"><label for="cfDupla">Cuidadoras por atendimento (dupla = 2)</label><input type="number" id="cfDupla" min="1" max="4"></div>
+            <div class="campo"><label for="cfTurno">Cuidadoras trabalhando por turno</label><input type="number" id="cfTurno" min="1" max="60"><span class="ajuda">Com 8 cuidadoras e dupla de 2, são até 4 famílias por turno.</span></div>
+            <div class="campo"><label for="cfDia">Máximo de famílias por dia</label><input type="number" id="cfDia" min="1" max="60"></div>
+            <fieldset><legend>Dias de atendimento</legend><div id="cfDias"></div></fieldset>
+          </div>
+          <div class="cartao">
+            <h2>Cores de gravidade</h2>
+            <p class="ajuda">Da mais leve (primeira) para a mais grave (última). Você define o que cada cor significa e, no cadastro das cuidadoras, quais cores cada uma atende.</p>
+            <div id="cfCores"></div>
+            <button type="button" class="btn sec mini" id="btnAddCor">+ Adicionar cor</button>
+          </div>
+          <div class="cartao">
+            <h2>Dispositivos de acessibilidade</h2>
+            <div class="campo"><label for="cfDisp">Um por linha</label><textarea id="cfDisp" rows="8"></textarea></div>
+          </div>
+        </div>
+        <div class="barra" style="margin-top:.8rem"><button type="submit" class="btn">Salvar configurações</button></div>
+      </form>
+    </section>
+  </main>
+
+  <div id="msg" role="status" aria-live="polite"></div>
+
+  <!-- Atendimento -->
+  <dialog id="dlgAtend" aria-labelledby="atTitulo">
+    <form id="formAtend" novalidate>
+      <h2 id="atTitulo">Atendimento</h2>
+      <div class="campo"><label for="atUsuario">Usuário (família)</label><select id="atUsuario"></select></div>
+      <div class="linha">
+        <div class="campo"><label for="atData">Data</label><input type="date" id="atData"></div>
+        <div class="campo"><label for="atPeriodo">Período</label><select id="atPeriodo"></select></div>
+      </div>
+      <fieldset><legend>Cuidadoras</legend><div id="atCuidadoras"></div></fieldset>
+      <div id="atAlertas" class="aviso" hidden></div>
+      <div class="erro-form" id="atErro" role="alert"></div>
+      <div class="rodape-dialogo">
+        <button type="button" class="btn perigo" id="atRetirar">Retirar da escala</button>
+        <button type="button" class="btn sec" data-fechar>Fechar</button>
+        <button type="submit" class="btn">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Usuário -->
+  <dialog id="dlgUsuario" aria-labelledby="uTitulo">
+    <form id="formUsuario" novalidate>
+      <h2 id="uTitulo">Usuário</h2>
+      <div class="campo"><label for="uNome">Nome ou família</label><input type="text" id="uNome" maxlength="80"></div>
+      <div class="campo"><label for="uEndereco">Endereço (opcional)</label><input type="text" id="uEndereco" maxlength="120"></div>
+      <fieldset><legend>Grau de gravidade (cor)</legend><div class="cores-radio" id="uCores"></div></fieldset>
+      <fieldset><legend>O que o usuário precisa</legend>
+        <label class="marca"><input type="checkbox" id="uBanho"> Ajuda no banho</label>
+        <label class="marca"><input type="checkbox" id="uComer"> Ajuda para comer</label>
+        <label class="marca"><input type="checkbox" id="uLevantar"> Ajuda para levantar (mobilidade)</label>
+        <div class="campo"><label for="uDisp">Dispositivo de acessibilidade</label><select id="uDisp"></select></div>
+      </fieldset>
+      <div class="linha">
+        <div class="campo"><label for="uFreq">Frequência</label><select id="uFreq"></select></div>
+        <div class="campo"><label for="uPeriodo">Período preferido</label>
+          <select id="uPeriodo"><option value="manha">Manhã</option><option value="tarde">Tarde</option><option value="qualquer">Tanto faz</option></select></div>
+      </div>
+      <div class="campo"><label for="uObs">Observações (opcional)</label><textarea id="uObs" maxlength="300"></textarea></div>
+      <label class="marca" id="uAtivoLinha"><input type="checkbox" id="uAtivo"> Ativo (aparece na escala)</label>
+      <div class="erro-form" id="uErro" role="alert"></div>
+      <div class="rodape-dialogo"><button type="button" class="btn sec" data-fechar>Fechar</button><button type="submit" class="btn">Salvar</button></div>
+    </form>
+  </dialog>
+
+  <!-- Cuidadora -->
+  <dialog id="dlgCuidadora" aria-labelledby="cTitulo">
+    <form id="formCuidadora" novalidate>
+      <h2 id="cTitulo">Cuidadora</h2>
+      <div class="campo"><label for="cNome">Nome</label><input type="text" id="cNome" maxlength="60"></div>
+      <fieldset><legend>Restrições</legend>
+        <label class="marca"><input type="checkbox" id="cPeso"> Não pode pegar peso (não é escalada para quem precisa de ajuda para levantar)</label>
+        <label class="marca"><input type="checkbox" id="cBanho"> Não faz banho (não é escalada para quem precisa de ajuda no banho)</label>
+      </fieldset>
+      <fieldset><legend>Cores de gravidade que atende</legend><div class="cores-radio" id="cCores"></div></fieldset>
+      <div class="campo"><label for="cObs">Observações (opcional)</label><textarea id="cObs" maxlength="300"></textarea></div>
+      <label class="marca" id="cAtivoLinha"><input type="checkbox" id="cAtivo"> Ativa (entra na escala)</label>
+      <div class="erro-form" id="cErro" role="alert"></div>
+      <div class="rodape-dialogo"><button type="button" class="btn sec" data-fechar>Fechar</button><button type="submit" class="btn">Salvar</button></div>
+    </form>
+  </dialog>
+
+  <!-- Ausência / reunião -->
+  <dialog id="dlgBloqueio" aria-labelledby="bTitulo">
+    <form id="formBloqueio" novalidate>
+      <h2 id="bTitulo">Ausência ou reunião</h2>
+      <div class="campo"><label for="bQuem">Quem</label><select id="bQuem"></select></div>
+      <div class="linha">
+        <div class="campo"><label for="bIni">Data inicial</label><input type="date" id="bIni"></div>
+        <div class="campo"><label for="bFim">Data final</label><input type="date" id="bFim"></div>
+      </div>
+      <div class="linha">
+        <div class="campo"><label for="bPeriodo">Período</label>
+          <select id="bPeriodo"><option value="ambos">Dia todo (manhã e tarde)</option><option value="manha">Só manhã</option><option value="tarde">Só tarde</option></select></div>
+        <div class="campo"><label for="bMotivo">Motivo</label><input type="text" id="bMotivo" maxlength="80" list="motivos" placeholder="Reunião, atestado, falta..."></div>
+      </div>
+      <datalist id="motivos"><option value="Reunião"><option value="Atestado"><option value="Falta"><option value="Folga"><option value="Compromisso"></datalist>
+      <div class="erro-form" id="bErro" role="alert"></div>
+      <div class="rodape-dialogo"><button type="button" class="btn sec" data-fechar>Fechar</button><button type="submit" class="btn">Registrar</button></div>
+    </form>
+  </dialog>
+
+  <!-- Confirmação (window.confirm é bloqueado dentro do Google Planilhas) -->
+  <dialog id="dlgConfirma" aria-labelledby="cfTitulo">
+    <form method="dialog" id="formConfirma">
+      <h2 id="cfTitulo">Confirmar</h2>
+      <div id="cfTexto"></div>
+      <div class="rodape-dialogo">
+        <button type="button" class="btn sec" id="cfNao">Cancelar</button>
+        <button type="button" class="btn" id="cfSim">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <?!= include('Script'); ?>
+</body>
+</html>
